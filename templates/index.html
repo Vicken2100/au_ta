@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deteksi Emosi Publik Terhadap Kinerja Polisi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .emotion-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: white;
+      }
+
+      .emotion-1 {
+        background-color: #22c55e; /* green-500 - Senang */
+      }
+
+      .emotion-2 {
+        background-color: #3b82f6; /* blue-500 - Percaya */
+      }
+
+      .emotion-3 {
+        background-color: #eab308; /* yellow-500 - Terkejut */
+      }
+
+      .emotion-4 {
+        background-color: #6b7280; /* gray-500 - Netral */
+      }
+
+      .emotion-5 {
+        background-color: #8b5cf6; /* purple-500 - Takut */
+      }
+
+      .emotion-6 {
+        background-color: #0ea5e9; /* sky-500 - Sedih */
+      }
+
+      .emotion-7 {
+        background-color: #ef4444; /* red-500 - Marah */
+      }
+    </style>
+  </head>
+  <body class="h-full flex flex-col items-center justify-center bg-gray-100">
+    <div
+      class="w-full max-w-md bg-white border border-gray-300 rounded-lg overflow-hidden shadow-lg"
+    >
+      <!-- Header -->
+      <div class="bg-blue-400 text-white text-center py-3 font-bold text-xl">
+        Deteksi Emosi Publik Terhadap Kinerja Polisi
+      </div>
+
+      <!-- Content -->
+      <div class="flex flex-col items-center p-6 space-y-6">
+        <!-- Social Media Icons -->
+        <div
+          class="relative w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center"
+        >
+          <img src="/image/logo.png" alt="Logo" />
+        </div>
+
+        <!-- Text instructions -->
+        <p class="text-center font-medium text-lg">
+          Masukkan kalimat untuk melihat prediksi emosi.
+        </p>
+
+        <!-- Input field -->
+        <div class="w-full">
+          <input
+            id="text-input"
+            type="text"
+            placeholder="Masukkan kalimat..."
+            class="w-full border border-gray-300 rounded py-2 px-4 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <!-- Predict button -->
+        <button
+          id="predict-btn"
+          class="bg-slate-600 hover:bg-slate-700 text-white font-medium py-2 px-10 rounded-md transition duration-200"
+        >
+          Prediksi
+        </button>
+
+        <!-- Emotion result -->
+        <div
+          id="emotion-result"
+          class="w-full bg-pink-200 py-2 px-4 rounded-md text-center"
+        >
+          Emosi: ...
+        </div>
+
+        <!-- Detail result - initially hidden -->
+        <div
+          id="result-details"
+          class="w-full border border-gray-300 rounded-md overflow-hidden"
+        >
+          <div class="bg-gray-100 p-4">
+            <h3 class="font-medium mb-2">Detail Emosi Per Kata:</h3>
+            <div
+              id="word-emotions-container"
+              class="grid grid-cols-2 sm:grid-cols-3 gap-2"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-right text-xs p-1 text-gray-600">
+        Dibuat Oleh: Audrey A.S. Kussoy (12101302)
+      </div>
+    </div>
+
+    <script>
+      // Mapping emosi ke teks
+      const emotionMapping = {
+        1: "Senang",
+        2: "Percaya",
+        3: "Terkejut",
+        4: "Netral",
+        5: "Takut",
+        6: "Sedih",
+        7: "Marah",
+      };
+
+      // Mapping emosi ke warna (untuk visualisasi di UI)
+      const emotionColors = {
+        1: "green", // Senang
+        2: "blue", // Percaya
+        3: "yellow", // Terkejut
+        4: "gray", // Netral
+        5: "purple", // Takut
+        6: "sky", // Sedih
+        7: "red", // Marah
+      };
+
+      // Ambil elemen DOM
+      const textInput = document.getElementById("text-input");
+      const predictBtn = document.getElementById("predict-btn");
+      const emotionResult = document.getElementById("emotion-result");
+      const resultDetails = document.getElementById("result-details");
+
+      // Event listener untuk tombol prediksi
+      predictBtn.addEventListener("click", predictEmotion);
+
+      // Event listener untuk input field (tekan Enter)
+      textInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          predictEmotion();
+        }
+      });
+
+      function displayWordEmotions(response) {
+        const container = document.getElementById("word-emotions-container");
+        container.innerHTML = ""; // Bersihkan container
+
+        if (
+          response &&
+          response.status === "success" &&
+          response.result &&
+          response.result.desc
+        ) {
+          const wordEmotions = response.result.desc;
+
+          // Urutkan kata-kata berdasarkan emosi (untuk mengelompokkan emosi serupa)
+          const sortedWords = Object.entries(wordEmotions).sort(
+            (a, b) => a[1] - b[1]
+          );
+
+          // Buat elemen untuk setiap kata dan emosi
+          sortedWords.forEach(([word, emotion]) => {
+            const emotionText = emotionMapping[emotion] || "Tidak diketahui";
+
+            const wordItem = document.createElement("div");
+            wordItem.className =
+              "flex items-center justify-between p-2 bg-white rounded shadow-sm";
+
+            wordItem.innerHTML = `
+              <span class="font-medium">${word}</span>
+              <span class="emotion-badge emotion-${emotion}">${emotionText}</span>
+            `;
+
+            container.appendChild(wordItem);
+          });
+        } else {
+          // Tampilkan pesan jika tidak ada data
+          container.innerHTML =
+            '<div class="col-span-full text-center text-gray-500 py-4">Tidak ada detail emosi yang tersedia</div>';
+        }
+      }
+
+      // Fungsi prediksi emosi
+      async function predictEmotion() {
+        const text = textInput.value.trim();
+
+        if (!text) {
+          emotionResult.textContent =
+            "Emosi: Silakan masukkan kalimat terlebih dahulu";
+          emotionResult.classList.remove("bg-pink-200");
+          emotionResult.classList.add("bg-yellow-200");
+          resultDetails.classList.add("hidden");
+          return;
+        }
+
+        try {
+          // Tampilkan loading
+          predictBtn.disabled = true;
+          const originalBtnText = predictBtn.textContent;
+          predictBtn.innerHTML = '<div class="loading"></div> Memproses...';
+
+          // Kirim request ke endpoint prediksi
+          const response = await fetch("/predict", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: text }),
+          });
+
+          const data = await response.json();
+
+          // Selesai loading
+          predictBtn.disabled = false;
+          predictBtn.textContent = originalBtnText;
+
+          if (data.status === "success") {
+            // Tampilkan hasil emosi
+            const emotion = data.result.emotion;
+            const emotionText = emotionMapping[emotion] || "Tidak diketahui";
+
+            emotionResult.innerHTML = `Emosi: <span class="emotion-badge emotion-${emotion}">${emotionText}</span>`;
+            emotionResult.classList.remove("bg-yellow-200");
+            emotionResult.classList.add("bg-pink-200");
+
+            // Tampilkan detail skor
+            resultDetails.classList.remove("hidden");
+
+            displayWordEmotions(data);
+          } else {
+            // Tampilkan pesan error
+            emotionResult.textContent = `Error: ${data.message}`;
+            emotionResult.classList.remove("bg-pink-200");
+            emotionResult.classList.add("bg-red-200");
+            resultDetails.classList.add("hidden");
+          }
+        } catch (error) {
+          // Selesai loading jika terjadi error
+          predictBtn.disabled = false;
+          predictBtn.textContent = originalBtnText;
+
+          // Tampilkan pesan error
+          emotionResult.textContent = `Error: Gagal terhubung ke server`;
+          emotionResult.classList.remove("bg-pink-200");
+          emotionResult.classList.add("bg-red-200");
+          resultDetails.classList.add("hidden");
+          console.error("Error:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

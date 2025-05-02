@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deteksi Emosi Publik Terhadap Kinerja Polisi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body class="bg-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Sidebar -->
+      <div
+        id="sidebar"
+        class="bg-gray-900 text-white w-64 flex flex-col fixed inset-y-0 left-0 z-30 transition-all duration-300"
+      >
+        <div class="p-4 border-b border-gray-800">
+          <h3 class="text-xl font-semibold">
+            Deteksi Emosi Publik Terhadap Kinerja Polisi
+          </h3>
+        </div>
+        <nav class="flex-1 pt-4 pb-4">
+          <ul>
+            <li>
+              <a
+                href="/upload"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+                id="nav-upload"
+              >
+                <i class="fas fa-upload mr-3"></i>
+                <span>Upload Dataset</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/word-processing"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+                id="nav-word"
+              >
+                <i class="fas fa-font mr-3"></i>
+                <span>Pemrosesan Data (Level Kata)</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/sentence-processing"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent active"
+                id="nav-sentence"
+              >
+                <i class="fas fa-align-left mr-3"></i>
+                <span>Pemrosesan Data (Level Kalimat)</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/training-results"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+                id="nav-training"
+              >
+                <i class="fas fa-chart-bar mr-3"></i>
+                <span>Hasil Pelatihan</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/validation"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+                id="nav-validation"
+              >
+                <i class="fas fa-check-circle mr-3"></i>
+                <span>Uji Validasi</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- Mobile Sidebar Toggle -->
+      <div class="lg:hidden fixed top-4 left-4 z-40">
+        <button
+          id="toggle-sidebar"
+          class="p-2 rounded-md bg-blue-600 text-white"
+        >
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Main Content -->
+      <div
+        id="main-content"
+        class="flex-1 ml-64 overflow-y-auto transition-all duration-300"
+      >
+        <div id="sentence-processing-section" class="p-6">
+          <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-2xl font-bold mb-6">
+              Pemrosesan Data (Level Kalimat)
+            </h2>
+
+            <div class="mb-6 p-4 bg-blue-50 text-blue-800 rounded-md">
+              Pemrosesan data pada level kalimat sedang berlangsung...
+            </div>
+            <div class="mb-6 bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div
+                id="progress-bar"
+                class="bg-blue-600 h-4 rounded-full transition-all duration-500"
+                style="width: 0%"
+              ></div>
+            </div>
+
+            <div class="mb-6">
+              <h4 class="text-xl font-semibold mb-4">
+                Pemrosesan Level Kalimat
+              </h4>
+              <p class="mb-4 text-gray-600">
+                Pada tahap ini, data akan diproses pada level kalimat dengan
+                metode berikut:
+              </p>
+              <ul class="list-disc pl-6 mb-4 text-gray-600">
+                <li>Tokenisasi kalimat</li>
+                <li>Penghapusan stop words</li>
+                <li>Stemming untuk mendapatkan kata dasar</li>
+                <li>Analisis sentimen berdasarkan emosi teks</li>
+              </ul>
+            </div>
+
+            <h4 class="text-xl font-semibold mb-4">
+              Hasil Pemrosesan Level Kalimat
+            </h4>
+            <div class="overflow-auto max-h-96 rounded-lg shadow-md">
+              <table class="min-w-full bg-white">
+                <thead class="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th
+                      class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                    >
+                      No.
+                    </th>
+                    <th
+                      class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                    >
+                      Data Original
+                    </th>
+                    <th
+                      class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                    >
+                      Token Kalimat
+                    </th>
+                    <th
+                      class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                    >
+                      Setelah Stemming
+                    </th>
+                    <th
+                      class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                    >
+                      Emosi
+                    </th>
+                    <th
+                      class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                    >
+                      Skor Sentimen
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="sentence-processing-results">
+                  <!-- Hasil akan diisi dengan JavaScript -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="flex justify-end mt-6">
+              <a
+                href="training-results.html"
+                id="view-training-results"
+                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                Lihat Hasil Pelatihan
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Toggle sidebar on mobile
+      document
+        .getElementById("toggle-sidebar")
+        .addEventListener("click", function () {
+          const sidebar = document.getElementById("sidebar");
+          const mainContent = document.getElementById("main-content");
+
+          if (sidebar.classList.contains("-ml-64")) {
+            sidebar.classList.remove("-ml-64");
+            mainContent.classList.remove("ml-0");
+          } else {
+            sidebar.classList.add("-ml-64");
+            mainContent.classList.add("ml-0");
+            mainContent.classList.remove("ml-64");
+          }
+        });
+
+      // Check if mobile on load
+      function checkMobile() {
+        if (window.innerWidth < 1024) {
+          document.getElementById("sidebar").classList.add("-ml-64");
+          document.getElementById("main-content").classList.add("ml-0");
+          document.getElementById("main-content").classList.remove("ml-64");
+        } else {
+          document.getElementById("sidebar").classList.remove("-ml-64");
+          document.getElementById("main-content").classList.remove("ml-0");
+          document.getElementById("main-content").classList.add("ml-64");
+        }
+      }
+
+      window.addEventListener("resize", checkMobile);
+      checkMobile();
+
+      // Set active menu item
+      document
+        .getElementById("nav-sentence")
+        .classList.add("active", "border-blue-600");
+      document
+        .getElementById("nav-sentence")
+        .classList.remove("border-transparent");
+
+      // LocalStorage functions for data persistence
+      function saveData(data) {
+        localStorage.setItem("processedData", JSON.stringify(data));
+      }
+
+      function loadData() {
+        const savedData = localStorage.getItem("currentData");
+        if (savedData) {
+          return JSON.parse(savedData);
+        }
+        return [];
+      }
+
+      // Daftar stop words bahasa Indonesia
+      const stopWords = [
+        "yang",
+        "di",
+        "dan",
+        "itu",
+        "dengan",
+        "untuk",
+        "pada",
+        "adalah",
+        "ini",
+        "dari",
+        "dalam",
+        "akan",
+        "tidak",
+        "mereka",
+        "tersebut",
+        "oleh",
+      ];
+
+      // Stem function (simplified)
+      function stemWord(word) {
+        // This is a very simplified stemming - in reality, you'd use a proper stemmer
+        const prefixes = ["me", "pe", "ber", "di", "ke", "se"];
+        const suffixes = ["kan", "an", "i", "nya"];
+
+        let stemmed = word;
+
+        // Remove prefixes
+        for (const prefix of prefixes) {
+          if (
+            stemmed.startsWith(prefix) &&
+            stemmed.length > prefix.length + 2
+          ) {
+            stemmed = stemmed.substring(prefix.length);
+            break;
+          }
+        }
+
+        // Remove suffixes
+        for (const suffix of suffixes) {
+          if (stemmed.endsWith(suffix) && stemmed.length > suffix.length + 2) {
+            stemmed = stemmed.substring(0, stemmed.length - suffix.length);
+            break;
+          }
+        }
+
+        return stemmed;
+      }
+
+      // Sentiment score mapping
+      const sentimentMap = {
+        Senang: 0.8,
+        Percaya: 0.6,
+        Terkejut: 0.3,
+        Netral: 0.0,
+        Takut: -0.5,
+        Sedih: -0.7,
+        Marah: -0.9,
+      };
+
+      // Process sentence level
+      function processSentenceLevel() {
+        const currentData = loadData();
+        if (currentData.length === 0) {
+          document.querySelector(".bg-blue-50").innerHTML =
+            "Tidak ada data untuk diproses. Silakan upload dataset terlebih dahulu.";
+          document
+            .getElementById("view-training-results")
+            .classList.add("opacity-50", "cursor-not-allowed");
+          document
+            .getElementById("view-training-results")
+            .addEventListener("click", function (e) {
+              e.preventDefault();
+              alert(
+                "Tidak ada data untuk diproses. Silakan upload dataset terlebih dahulu."
+              );
+            });
+          return;
+        }
+
+        const progressBar = document.getElementById("progress-bar");
+        let progress = 0;
+        const processed = [];
+
+        const interval = setInterval(() => {
+          progress += 5;
+          progressBar.style.width = `${progress}%`;
+
+          if (progress >= 100) {
+            clearInterval(interval);
+            document.querySelector(".bg-blue-50").innerHTML =
+              "Pemrosesan data level kalimat telah selesai!";
+
+            // Process and display results
+            const resultsTable = document.getElementById(
+              "sentence-processing-results"
+            );
+            resultsTable.innerHTML = "";
+
+            currentData.forEach((item, index) => {
+              // Process data
+              const tokens = item.processed.split(" ");
+              const filteredTokens = tokens.filter(
+                (token) => !stopWords.includes(token)
+              );
+              const stemmedTokens = filteredTokens.map((token) =>
+                stemWord(token)
+              );
+              const sentimentScore = sentimentMap[item.emotion] || 0;
+
+              processed.push({
+                ...item,
+                tokens: filteredTokens,
+                stemmed: stemmedTokens,
+                sentimentScore: sentimentScore,
+              });
+
+              // Create table row
+              const row = document.createElement("tr");
+              row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+              // No column
+              const numberCell = document.createElement("td");
+              numberCell.className =
+                "py-3 px-4 text-sm border-b border-gray-200";
+              numberCell.textContent = index + 1;
+              row.appendChild(numberCell);
+
+              // Original data column
+              const originalCell = document.createElement("td");
+              originalCell.className =
+                "py-3 px-4 text-sm border-b border-gray-200";
+              originalCell.textContent = item.original;
+              row.appendChild(originalCell);
+
+              // Token column
+              const tokenCell = document.createElement("td");
+              tokenCell.className =
+                "py-3 px-4 text-sm border-b border-gray-200";
+              tokenCell.textContent = filteredTokens.join(", ");
+              row.appendChild(tokenCell);
+
+              // Stemmed column
+              const stemmedCell = document.createElement("td");
+              stemmedCell.className =
+                "py-3 px-4 text-sm border-b border-gray-200";
+              stemmedCell.textContent = stemmedTokens.join(", ");
+              row.appendChild(stemmedCell);
+
+              // Emotion column
+              const emotionCell = document.createElement("td");
+              emotionCell.className =
+                "py-3 px-4 text-sm border-b border-gray-200";
+              emotionCell.textContent = item.emotion;
+              row.appendChild(emotionCell);
+
+              // Sentiment score column
+              const scoreCell = document.createElement("td");
+              scoreCell.className =
+                "py-3 px-4 text-sm border-b border-gray-200";
+              scoreCell.textContent = sentimentScore.toFixed(2);
+              row.appendChild(scoreCell);
+
+              resultsTable.appendChild(row);
+            });
+
+            // Save processed data
+            saveData(processed);
+          }
+        }, 100);
+      }
+
+      // Jalankan pemrosesan segera setelah halaman dimuat
+      document.addEventListener("DOMContentLoaded", function () {
+        processSentenceLevel();
+      });
+    </script>
+  </body>
+</html>

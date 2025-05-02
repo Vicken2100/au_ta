@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deteksi Emosi Publik Terhadap Kinerja Polisi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body class="bg-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Sidebar -->
+      <div
+        id="sidebar"
+        class="bg-gray-900 text-white w-64 flex flex-col fixed inset-y-0 left-0 z-30 transition-all duration-300"
+      >
+        <div class="p-4 border-b border-gray-800">
+          <h3 class="text-xl font-semibold">
+            Deteksi Emosi Publik Terhadap Kinerja Polisi
+          </h3>
+        </div>
+        <nav class="flex-1 pt-4 pb-4">
+          <ul>
+            <li>
+              <a
+                href="/upload"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+                id="nav-upload"
+              >
+                <i class="fas fa-upload mr-3"></i>
+                <span>Upload Dataset</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/word-processing"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent active"
+                id="nav-word"
+              >
+                <i class="fas fa-font mr-3"></i>
+                <span>Pemrosesan Data (Level Kata)</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/sentence-processing"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+                id="nav-sentence"
+              >
+                <i class="fas fa-align-left mr-3"></i>
+                <span>Pemrosesan Data (Level Kalimat)</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/training-results"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+                id="nav-training"
+              >
+                <i class="fas fa-chart-bar mr-3"></i>
+                <span>Hasil Pelatihan</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/validation"
+                class="flex items-center py-3 px-4 text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+                id="nav-validation"
+              >
+                <i class="fas fa-check-circle mr-3"></i>
+                <span>Uji Validasi</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- Mobile Sidebar Toggle -->
+      <div class="lg:hidden fixed top-4 left-4 z-40">
+        <button
+          id="toggle-sidebar"
+          class="p-2 rounded-md bg-blue-600 text-white"
+        >
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Main Content -->
+      <div
+        id="main-content"
+        class="flex-1 ml-64 overflow-y-auto transition-all duration-300"
+      >
+        <div id="word-processing-section" class="p-6">
+          <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-2xl font-bold mb-6">
+              Pemrosesan Data (Level Kata)
+            </h2>
+
+            <!-- Loader overlay -->
+            <div id="loader" class="hidden">
+              <div
+                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+              >
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                  <div class="mb-4">
+                    <i
+                      class="fas fa-circle-notch fa-spin text-blue-600 text-4xl"
+                    ></i>
+                  </div>
+                  <p class="text-lg" id="loader-message">Memuat data...</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-6">
+              <div
+                id="status-message"
+                class="p-4 bg-blue-50 text-blue-800 rounded-md flex-grow mr-4"
+              >
+                Data saat ini ditampilkan. Klik tombol "Proses Data" untuk
+                memproses ulang.
+              </div>
+              <button
+                id="process-button"
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <i class="fas fa-cogs mr-2"></i> Proses Data
+              </button>
+            </div>
+
+            <div class="mb-6 bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div
+                id="progress-bar"
+                class="bg-blue-600 h-4 rounded-full transition-all duration-500"
+                style="width: 0%"
+              ></div>
+            </div>
+
+            <!-- 1. Daftar Kandidat Kata -->
+            <div class="mb-8">
+              <h3 class="text-xl font-semibold mb-4">
+                1. Daftar Kandidat Kata
+              </h3>
+              <div class="overflow-auto max-h-60 rounded-lg shadow-md">
+                <table class="min-w-full bg-white">
+                  <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-16"
+                      >
+                        No
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Kata
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Frekuensi
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-32"
+                      >
+                        Emosi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="candidate-words-table">
+                    <tr>
+                      <td
+                        colspan="4"
+                        class="py-4 px-4 text-center text-gray-500"
+                      >
+                        Memuat data...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 2a. Daftar Emosi -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div>
+                <h3 class="text-xl font-semibold mb-4">2a. Daftar Emosi</h3>
+                <div class="overflow-auto max-h-72 rounded-lg shadow-md">
+                  <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100 sticky top-0">
+                      <tr>
+                        <th
+                          class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-16"
+                        >
+                          ID
+                        </th>
+                        <th
+                          class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                        >
+                          Emosi
+                        </th>
+                        <th
+                          class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                        >
+                          Jumlah
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="emotion-list-table">
+                      <tr>
+                        <td
+                          colspan="3"
+                          class="py-4 px-4 text-center text-gray-500"
+                        >
+                          Memuat data...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- 2b. Label Emosi -->
+              <div>
+                <h3 class="text-xl font-semibold mb-4">2b. Label Emosi</h3>
+                <div class="overflow-auto max-h-72 rounded-lg shadow-md">
+                  <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100 sticky top-0">
+                      <tr>
+                        <th
+                          class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-16"
+                        >
+                          ID
+                        </th>
+                        <th
+                          class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                        >
+                          Emosi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="emotion-labels-table">
+                      <!-- Data akan diisi dengan JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Seed Lexicon -->
+            <div class="mb-8">
+              <h3 class="text-xl font-semibold mb-4">
+                3. Seed Lexicon (Kamus Baku untuk Seed Lexicon)
+              </h3>
+              <div class="overflow-auto max-h-72 rounded-lg shadow-md">
+                <table class="min-w-full bg-white">
+                  <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-16"
+                      >
+                        ID
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Kata
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Label
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="lexicon-seed-table">
+                    <tr>
+                      <td
+                        colspan="3"
+                        class="py-4 px-4 text-center text-gray-500"
+                      >
+                        Memuat data...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 4. Seed Lexicon yang Telah Dibarharui -->
+            <div class="mb-8">
+              <h3 class="text-xl font-semibold mb-4">
+                4. Seed Lexicon yang Telah Dibarharui
+              </h3>
+              <div class="overflow-auto max-h-72 rounded-lg shadow-md">
+                <table class="min-w-full bg-white">
+                  <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-16"
+                      >
+                        ID
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Kata
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Label
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="updated-lexicon-table">
+                    <tr>
+                      <td
+                        colspan="3"
+                        class="py-4 px-4 text-center text-gray-500"
+                      >
+                        Memuat data...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+              <a
+                href="/sentence-processing"
+                id="process-sentence-level"
+                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                Lanjut ke Pemrosesan Level Kalimat
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Toggle sidebar on mobile
+      document
+        .getElementById("toggle-sidebar")
+        .addEventListener("click", function () {
+          const sidebar = document.getElementById("sidebar");
+          const mainContent = document.getElementById("main-content");
+
+          if (sidebar.classList.contains("-ml-64")) {
+            sidebar.classList.remove("-ml-64");
+            mainContent.classList.remove("ml-0");
+          } else {
+            sidebar.classList.add("-ml-64");
+            mainContent.classList.add("ml-0");
+            mainContent.classList.remove("ml-64");
+          }
+        });
+
+      // Check if mobile on load
+      function checkMobile() {
+        if (window.innerWidth < 1024) {
+          document.getElementById("sidebar").classList.add("-ml-64");
+          document.getElementById("main-content").classList.add("ml-0");
+          document.getElementById("main-content").classList.remove("ml-64");
+        } else {
+          document.getElementById("sidebar").classList.remove("-ml-64");
+          document.getElementById("main-content").classList.remove("ml-0");
+          document.getElementById("main-content").classList.add("ml-64");
+        }
+      }
+
+      window.addEventListener("resize", checkMobile);
+      checkMobile();
+
+      // Set active menu item
+      document
+        .getElementById("nav-word")
+        .classList.add("active", "border-blue-600");
+      document
+        .getElementById("nav-word")
+        .classList.remove("border-transparent");
+
+      // Daftar emosi berdasarkan list yang diberikan
+      const emotionsMap = {
+        1: "Senang",
+        2: "Percaya",
+        3: "Terkejut",
+        4: "Netral",
+        5: "Takut",
+        6: "Sedih",
+        7: "Marah",
+      };
+
+      // Show loader
+      function showLoader(message = "Memuat data...") {
+        document.getElementById("loader-message").textContent = message;
+        document.getElementById("loader").classList.remove("hidden");
+      }
+
+      // Hide loader
+      function hideLoader() {
+        document.getElementById("loader").classList.add("hidden");
+      }
+
+      // Show status message
+      function updateStatus(message, isError = false) {
+        const statusElement = document.getElementById("status-message");
+        statusElement.textContent = message;
+
+        if (isError) {
+          statusElement.classList.remove("bg-blue-50", "text-blue-800");
+          statusElement.classList.add("bg-red-50", "text-red-800");
+        } else {
+          statusElement.classList.remove("bg-red-50", "text-red-800");
+          statusElement.classList.add("bg-blue-50", "text-blue-800");
+        }
+      }
+
+      // Function to fetch data from API
+      async function fetchData(endpoint) {
+        try {
+          const response = await fetch(endpoint);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return await response.json();
+        } catch (error) {
+          console.error(`Error fetching data from ${endpoint}:`, error);
+          throw error;
+        }
+      }
+
+      // Function to update the candidate words table
+      function updateCandidateWordsTable(data, seedData) {
+        const tableBody = document.getElementById("candidate-words-table");
+        tableBody.innerHTML = "";
+
+        // Filter out words that exist in seed data
+        const seedWords = new Set(
+          seedData.map((item) => item.word.toLowerCase())
+        );
+
+        const filteredData = data.filter(
+          (item) => !seedWords.has(item.word.toLowerCase())
+        );
+
+        if (!filteredData || filteredData.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 4;
+          cell.className =
+            "py-3 px-4 text-sm text-gray-500 text-center border-b";
+          cell.textContent = "Tidak ada data kandidat kata";
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+          return;
+        }
+
+        filteredData.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+          // No column
+          const noCell = document.createElement("td");
+          noCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          noCell.textContent = index + 1;
+          row.appendChild(noCell);
+
+          // Word column
+          const wordCell = document.createElement("td");
+          wordCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          wordCell.textContent = item.word;
+          row.appendChild(wordCell);
+
+          // Frequency column
+          const freqCell = document.createElement("td");
+          freqCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          freqCell.textContent = item.frequency || 1;
+          row.appendChild(freqCell);
+
+          // Emotion column
+          const emotionCell = document.createElement("td");
+          emotionCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          emotionCell.textContent = emotionsMap[item.emotion] || "Netral";
+          row.appendChild(emotionCell);
+
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Function to update emotion list table
+      function updateEmotionListTable(data) {
+        const tableBody = document.getElementById("emotion-list-table");
+        tableBody.innerHTML = "";
+
+        if (!data || data.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 3;
+          cell.className =
+            "py-3 px-4 text-sm text-gray-500 text-center border-b";
+          cell.textContent = "Tidak ada data emosi";
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+          return;
+        }
+
+        // Group data by emotion and count
+        const emotionCounts = {};
+        data.forEach((item) => {
+          const emotion = item.emotion;
+          if (!emotionCounts[emotion]) {
+            emotionCounts[emotion] = 0;
+          }
+          emotionCounts[emotion]++;
+        });
+
+        // Create entries for each emotion that has data
+        Object.entries(emotionCounts)
+          .sort((a, b) => a[0] - b[0])
+          .forEach(([emotion, count], index) => {
+            const row = document.createElement("tr");
+            row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+            // ID column
+            const idCell = document.createElement("td");
+            idCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+            idCell.textContent = emotion;
+            row.appendChild(idCell);
+
+            // Emotion name column
+            const emotionCell = document.createElement("td");
+            emotionCell.className =
+              "py-2 px-4 text-sm border-b border-gray-200";
+            emotionCell.textContent = emotionsMap[emotion] || "Undefined";
+            row.appendChild(emotionCell);
+
+            // Count column
+            const countCell = document.createElement("td");
+            countCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+            countCell.textContent = count;
+            row.appendChild(countCell);
+
+            tableBody.appendChild(row);
+          });
+      }
+
+      // Function to update emotion labels table
+      function updateEmotionLabelsTable() {
+        const tableBody = document.getElementById("emotion-labels-table");
+        tableBody.innerHTML = "";
+
+        // Create entries for each emotion
+        Object.entries(emotionsMap).forEach(([id, emotion], index) => {
+          const row = document.createElement("tr");
+          row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+          // ID column
+          const idCell = document.createElement("td");
+          idCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          idCell.textContent = id;
+          row.appendChild(idCell);
+
+          // Emotion name column
+          const emotionCell = document.createElement("td");
+          emotionCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          emotionCell.textContent = emotion;
+          row.appendChild(emotionCell);
+
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Function to update lexicon seed table
+      function updateLexiconSeedTable(data) {
+        const tableBody = document.getElementById("lexicon-seed-table");
+        tableBody.innerHTML = "";
+
+        if (!data || data.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 3;
+          cell.className =
+            "py-3 px-4 text-sm text-gray-500 text-center border-b";
+          cell.textContent = "Tidak ada data seed lexicon";
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+          return;
+        }
+
+        data.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+          // ID column
+          const idCell = document.createElement("td");
+          idCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          idCell.textContent = index + 1;
+          row.appendChild(idCell);
+
+          // Word column
+          const wordCell = document.createElement("td");
+          wordCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          wordCell.textContent = item.word;
+          row.appendChild(wordCell);
+
+          // Emotion column
+          const emotionCell = document.createElement("td");
+          emotionCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          emotionCell.textContent = item.emotion;
+          row.appendChild(emotionCell);
+
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Function to update updated lexicon table
+      function updateUpdatedLexiconTable(data) {
+        const tableBody = document.getElementById("updated-lexicon-table");
+        tableBody.innerHTML = "";
+
+        if (!data || data.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 3;
+          cell.className =
+            "py-3 px-4 text-sm text-gray-500 text-center border-b";
+          cell.textContent = "Tidak ada data seed lexicon yang diperbarui";
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+          return;
+        }
+
+        data.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+          // ID column
+          const idCell = document.createElement("td");
+          idCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          idCell.textContent = index + 1;
+          row.appendChild(idCell);
+
+          // Word column
+          const wordCell = document.createElement("td");
+          wordCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          wordCell.textContent = item.word;
+          row.appendChild(wordCell);
+
+          // Label/Emotion column
+          const labelCell = document.createElement("td");
+          labelCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          labelCell.textContent = emotionsMap[item.emotion] || item.emotion;
+          row.appendChild(labelCell);
+
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Function to load initial data
+      async function loadInitialData() {
+        showLoader("Memuat data awal...");
+
+        try {
+          // Fetch data from endpoints
+          const [lexiconData, seedData] = await Promise.all([
+            fetchData("/api/lexicon"),
+            fetchData("/api/lexicon-seed"),
+          ]);
+
+          // Update all tables
+          updateCandidateWordsTable(lexiconData, seedData);
+          updateEmotionListTable(seedData);
+          updateEmotionLabelsTable();
+          updateLexiconSeedTable(seedData);
+          updateUpdatedLexiconTable(lexiconData);
+
+          updateStatus(
+            'Data saat ini ditampilkan. Klik tombol "Proses Data" untuk memproses ulang.'
+          );
+          hideLoader();
+          return true;
+        } catch (error) {
+          console.error("Error loading initial data:", error);
+          updateStatus(
+            "Terjadi kesalahan saat memuat data: " + error.message,
+            true
+          );
+          hideLoader();
+          return false;
+        }
+      }
+
+      // Function to process word level
+      async function processWordLevel() {
+        showLoader("Memulai pemrosesan data level kata...");
+        updateStatus("Memulai pemrosesan data level kata...");
+
+        try {
+          // Disable process button during processing
+          const processButton = document.getElementById("process-button");
+          processButton.disabled = true;
+          processButton.classList.add("opacity-50", "cursor-not-allowed");
+
+          // Reset progress bar
+          const progressBar = document.getElementById("progress-bar");
+          progressBar.style.width = "0%";
+
+          // Simulate progress bar
+          let progress = 0;
+          const progressInterval = setInterval(() => {
+            progress += 2;
+            if (progress > 95) progress = 95; // Jangan sampai 100% sebelum selesai
+            progressBar.style.width = `${progress}%`;
+          }, 150);
+
+          // Panggil API proses
+          updateStatus("Menjalankan proses pemrosesan data...");
+          progress = 20;
+          progressBar.style.width = `${progress}%`;
+
+          try {
+            const processResponse = await fetch("/api/process", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (!processResponse.ok) {
+              throw new Error(`HTTP error! status: ${processResponse.status}`);
+            }
+
+            const processResult = await processResponse.json();
+            console.log("Process result:", processResult);
+
+            // Update progress bar
+            progress = 60;
+            progressBar.style.width = `${progress}%`;
+            updateStatus("Pemrosesan selesai, mengambil hasil data terbaru...");
+          } catch (processError) {
+            console.error("Error calling process API:", processError);
+            updateStatus(
+              "Terjadi kesalahan saat memanggil API pemrosesan, mencoba mengambil data langsung...",
+              false
+            );
+          }
+
+          // Fetch data from endpoints after processing
+          const [lexiconData, seedData] = await Promise.all([
+            fetchData("/api/lexicon"),
+            fetchData("/api/lexicon-seed"),
+          ]);
+
+          // Update all tables
+          updateCandidateWordsTable(lexiconData, seedData);
+          updateEmotionListTable(seedData);
+          updateLexiconSeedTable(seedData);
+          updateUpdatedLexiconTable(lexiconData);
+
+          // Ensure progress bar completes
+          clearInterval(progressInterval);
+          progress = 100;
+          progressBar.style.width = "100%";
+
+          // Update status
+          updateStatus("Pemrosesan data level kata telah selesai!");
+
+          // Re-enable process button
+          processButton.disabled = false;
+          processButton.classList.remove("opacity-50", "cursor-not-allowed");
+
+          hideLoader();
+          return true;
+        } catch (error) {
+          console.error("Error processing word level:", error);
+          updateStatus(
+            "Terjadi kesalahan saat memproses data: " + error.message,
+            true
+          );
+
+          // Re-enable process button
+          const processButton = document.getElementById("process-button");
+          processButton.disabled = false;
+          processButton.classList.remove("opacity-50", "cursor-not-allowed");
+
+          hideLoader();
+          return false;
+        }
+      }
+
+      // Load initial data when page loads
+      document.addEventListener("DOMContentLoaded", function () {
+        // Load initial data and emotion labels
+        loadInitialData();
+        updateEmotionLabelsTable();
+      });
+
+      // Event listener untuk tombol proses
+      document
+        .getElementById("process-button")
+        .addEventListener("click", function () {
+          processWordLevel();
+        });
+    </script>
+  </body>
+</html>
