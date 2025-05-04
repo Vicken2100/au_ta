@@ -429,7 +429,8 @@
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
-          return await response.json();
+
+          return response.json();
         } catch (error) {
           console.error(`Error fetching data from ${endpoint}:`, error);
           throw error;
@@ -718,7 +719,7 @@
             progress += 2;
             if (progress > 95) progress = 95; // Jangan sampai 100% sebelum selesai
             progressBar.style.width = `${progress}%`;
-          }, 150);
+          }, 1000);
 
           // Panggil API proses
           updateStatus("Menjalankan proses pemrosesan data...");

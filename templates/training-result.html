@@ -126,31 +126,6 @@
                   </div>
                 </div>
               </div>
-              <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div class="p-4">
-                  <h5 class="text-lg font-semibold mb-4">
-                    Informasi Pelatihan
-                  </h5>
-                  <div>
-                    <p class="mb-2">
-                      <span class="font-semibold">Algoritma:</span>
-                      <span id="algorithm">SVM dengan Kernel RBF</span>
-                    </p>
-                    <p class="mb-2">
-                      <span class="font-semibold">Jumlah Data Latih:</span>
-                      <span id="train-data">80%</span>
-                    </p>
-                    <p class="mb-2">
-                      <span class="font-semibold">Jumlah Data Uji:</span>
-                      <span id="test-data">20%</span>
-                    </p>
-                    <p>
-                      <span class="font-semibold">Waktu Pelatihan:</span>
-                      <span id="training-time">2.3 detik</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -226,48 +201,12 @@
     </div>
 
     <script>
-      // Toggle sidebar on mobile
-      document
-        .getElementById("toggle-sidebar")
-        .addEventListener("click", function () {
-          const sidebar = document.getElementById("sidebar");
-          const mainContent = document.getElementById("main-content");
+      // API endpoint configuration
+      const API_ENDPOINTS = {
+        PREDICT_RESULT: "/api/predict-result",
+      };
 
-          if (sidebar.classList.contains("-ml-64")) {
-            sidebar.classList.remove("-ml-64");
-            mainContent.classList.remove("ml-0");
-          } else {
-            sidebar.classList.add("-ml-64");
-            mainContent.classList.add("ml-0");
-            mainContent.classList.remove("ml-64");
-          }
-        });
-
-      // Check if mobile on load
-      function checkMobile() {
-        if (window.innerWidth < 1024) {
-          document.getElementById("sidebar").classList.add("-ml-64");
-          document.getElementById("main-content").classList.add("ml-0");
-          document.getElementById("main-content").classList.remove("ml-64");
-        } else {
-          document.getElementById("sidebar").classList.remove("-ml-64");
-          document.getElementById("main-content").classList.remove("ml-0");
-          document.getElementById("main-content").classList.add("ml-64");
-        }
-      }
-
-      window.addEventListener("resize", checkMobile);
-      checkMobile();
-
-      // Set active menu item
-      document
-        .getElementById("nav-training")
-        .classList.add("active", "border-blue-600");
-      document
-        .getElementById("nav-training")
-        .classList.remove("border-transparent");
-
-      // Daftar emosi berdasarkan list yang diberikan
+      // Emotion mapping with colors for charts
       const emotionsMap = {
         1: "Senang",
         2: "Percaya",
@@ -278,66 +217,300 @@
         7: "Marah",
       };
 
-      const emotions = Object.values(emotionsMap);
-
-      // Simulasi data performa per kelas
-      const classPerformance = [
-        {
-          emotion: "Senang",
-          precision: "89.2%",
-          recall: "85.7%",
-          f1Score: "87.4%",
-          support: 28,
-        },
-        {
-          emotion: "Percaya",
-          precision: "82.1%",
-          recall: "79.3%",
-          f1Score: "80.7%",
-          support: 22,
-        },
-        {
-          emotion: "Terkejut",
-          precision: "78.5%",
-          recall: "80.2%",
-          f1Score: "79.3%",
-          support: 16,
-        },
-        {
-          emotion: "Netral",
-          precision: "91.3%",
-          recall: "87.9%",
-          f1Score: "89.6%",
-          support: 32,
-        },
-        {
-          emotion: "Takut",
-          precision: "76.8%",
-          recall: "72.1%",
-          f1Score: "74.4%",
-          support: 14,
-        },
-        {
-          emotion: "Sedih",
-          precision: "81.7%",
-          recall: "77.8%",
-          f1Score: "79.7%",
-          support: 24,
-        },
-        {
-          emotion: "Marah",
-          precision: "85.3%",
-          recall: "81.9%",
-          f1Score: "83.6%",
-          support: 19,
-        },
+      // Chart colors for consistency
+      const chartColors = [
+        "rgba(54, 162, 235, 0.7)", // Blue - Senang
+        "rgba(75, 192, 192, 0.7)", // Teal - Percaya
+        "rgba(153, 102, 255, 0.7)", // Purple - Terkejut
+        "rgba(201, 203, 207, 0.7)", // Gray - Netral
+        "rgba(255, 206, 86, 0.7)", // Yellow - Takut
+        "rgba(255, 99, 132, 0.7)", // Pink - Sedih
+        "rgba(255, 159, 64, 0.7)", // Orange - Marah
       ];
 
-      // Populate class metrics table
-      function populateClassMetrics() {
-        const tableBody = document.getElementById("class-metrics");
+      // Fetch data from API with error handling for NaN values
+      async function fetchPredictionResults() {
+        try {
+          updateStatus("Memuat data prediksi dari server...", false);
 
-        classPerformance.forEach((item, index) => {
+          const response = await fetch(API_ENDPOINTS.PREDICT_RESULT);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          // Get the raw text response first
+          const rawText = await response.text();
+
+          // Try to fix any potential NaN issues by replacing NaN with "NaN"
+          const fixedText = rawText.replace(/: NaN/g, ': "NaN"');
+
+          try {
+            // Parse the fixed JSON
+            const data = JSON.parse(fixedText);
+            return validatePredictionData(data);
+          } catch (parseError) {
+            console.error("Error parsing fixed JSON:", parseError);
+            console.log("Problematic JSON:", rawText);
+            throw parseError;
+          }
+        } catch (error) {
+          console.error("Error fetching prediction results:", error);
+          updateStatus(
+            `Error: ${error.message}. Silakan coba lagi nanti.`,
+            true
+          );
+          throw error;
+        }
+      }
+
+      // Validate prediction data
+      function validatePredictionData(data) {
+        if (!Array.isArray(data)) {
+          console.error("Data is not an array");
+          return [];
+        }
+
+        // Filter out invalid items
+        const validData = data.filter((item) => {
+          // Check if required fields exist
+          if (!item || typeof item !== "object") return false;
+          if (item.tweet === undefined || item.tweet === null) return false;
+          if (item.emotion === undefined || item.emotion === null) return false;
+          if (item.predict === undefined || item.predict === null) return false;
+
+          // Check for NaN values
+          if (
+            item.tweet === "NaN" ||
+            (typeof item.tweet === "number" && isNaN(item.tweet))
+          )
+            return false;
+
+          // Check tweet length
+          if (typeof item.tweet === "string" && item.tweet.length <= 1)
+            return false;
+
+          return true;
+        });
+
+        if (validData.length === 0) {
+          console.warn("No valid prediction data found");
+        } else if (validData.length < data.length) {
+          console.warn(
+            `Filtered out ${data.length - validData.length} invalid items`
+          );
+        }
+
+        return validData;
+      }
+
+      // Update status message
+      function updateStatus(message, isError = false) {
+        const statusElement = document.querySelector(".bg-green-50");
+        statusElement.textContent = message;
+
+        if (isError) {
+          statusElement.classList.remove("bg-green-50", "text-green-800");
+          statusElement.classList.add("bg-red-50", "text-red-800");
+        } else {
+          statusElement.classList.remove("bg-red-50", "text-red-800");
+          statusElement.classList.add("bg-green-50", "text-green-800");
+        }
+      }
+
+      // Calculate metrics (accuracy, precision, recall, F1) from prediction results
+      function calculateMetrics(data) {
+        // Initialize counters
+        let totalPredictions = data.length;
+        let correctPredictions = 0;
+
+        // Initialize emotion-wise counters
+        const metrics = {};
+
+        // Initialize emotion counts for all emotions
+        Object.values(emotionsMap).forEach((emotion) => {
+          metrics[emotion] = {
+            truePositives: 0,
+            falsePositives: 0,
+            falseNegatives: 0,
+            total: 0,
+            predicted: 0,
+          };
+        });
+
+        // Process each prediction
+        data.forEach((item) => {
+          const trueEmotion = emotionsMap[item.emotion] || "Unknown";
+          const predictedEmotion = emotionsMap[item.predict] || "Unknown";
+
+          // Increment total for true emotion
+          if (metrics[trueEmotion]) {
+            metrics[trueEmotion].total++;
+          }
+
+          // Increment predicted count
+          if (metrics[predictedEmotion]) {
+            metrics[predictedEmotion].predicted++;
+          }
+
+          // Check if prediction was correct
+          if (item.emotion === item.predict) {
+            correctPredictions++;
+
+            // Increment true positive for this emotion
+            if (metrics[trueEmotion]) {
+              metrics[trueEmotion].truePositives++;
+            }
+          } else {
+            // False positive for predicted emotion
+            if (metrics[predictedEmotion]) {
+              metrics[predictedEmotion].falsePositives++;
+            }
+
+            // False negative for true emotion
+            if (metrics[trueEmotion]) {
+              metrics[trueEmotion].falseNegatives++;
+            }
+          }
+        });
+
+        // Calculate overall accuracy
+        const accuracy = (correctPredictions / totalPredictions) * 100;
+
+        // Calculate class-wise metrics
+        const classMetrics = [];
+        let totalPrecision = 0;
+        let totalRecall = 0;
+        let totalF1 = 0;
+        let validEmotionCount = 0;
+
+        Object.entries(metrics).forEach(([emotion, counts]) => {
+          // Skip emotions with no examples
+          if (counts.total === 0) return;
+
+          // Calculate metrics
+          const precision =
+            counts.truePositives === 0
+              ? 0
+              : (counts.truePositives /
+                  (counts.truePositives + counts.falsePositives)) *
+                100;
+
+          const recall =
+            counts.truePositives === 0
+              ? 0
+              : (counts.truePositives /
+                  (counts.truePositives + counts.falseNegatives)) *
+                100;
+
+          const f1Score =
+            precision === 0 || recall === 0
+              ? 0
+              : (2 * precision * recall) / (precision + recall);
+
+          // Add to totals for averaging
+          totalPrecision += precision;
+          totalRecall += recall;
+          totalF1 += f1Score;
+          validEmotionCount++;
+
+          classMetrics.push({
+            emotion,
+            precision: precision.toFixed(1) + "%",
+            recall: recall.toFixed(1) + "%",
+            f1Score: f1Score.toFixed(1) + "%",
+            support: counts.total,
+          });
+        });
+
+        // Calculate overall metrics (macro-average)
+        const overallPrecision =
+          validEmotionCount > 0 ? totalPrecision / validEmotionCount : 0;
+        const overallRecall =
+          validEmotionCount > 0 ? totalRecall / validEmotionCount : 0;
+        const overallF1 =
+          validEmotionCount > 0 ? totalF1 / validEmotionCount : 0;
+
+        return {
+          accuracy: accuracy.toFixed(1) + "%",
+          precision: overallPrecision.toFixed(1) + "%",
+          recall: overallRecall.toFixed(1) + "%",
+          f1Score: overallF1.toFixed(1) + "%",
+          classMetrics,
+          metrics,
+        };
+      }
+
+      // Generate confusion matrix from prediction results
+      function generateConfusionMatrix(data) {
+        // Get all unique emotion IDs
+        const emotionIds = Object.keys(emotionsMap).map((id) => parseInt(id));
+        const maxEmotionId = Math.max(...emotionIds);
+
+        // Initialize confusion matrix with zeros
+        const confusionMatrix = Array(maxEmotionId + 1)
+          .fill()
+          .map(() => Array(maxEmotionId + 1).fill(0));
+
+        // Fill confusion matrix
+        data.forEach((item) => {
+          const trueEmotion = parseInt(item.emotion);
+          const predictedEmotion = parseInt(item.predict);
+
+          // Skip invalid emotions
+          if (isNaN(trueEmotion) || isNaN(predictedEmotion)) return;
+          if (trueEmotion < 1 || trueEmotion > maxEmotionId) return;
+          if (predictedEmotion < 1 || predictedEmotion > maxEmotionId) return;
+
+          confusionMatrix[trueEmotion][predictedEmotion]++;
+        });
+
+        // Extract only the rows and columns for emotions that are defined in emotionsMap
+        const filteredMatrix = emotionIds.map((trueId) =>
+          emotionIds.map((predictId) => confusionMatrix[trueId][predictId])
+        );
+
+        return filteredMatrix;
+      }
+
+      // Count emotions in the data
+      function countEmotions(data) {
+        const counts = {};
+
+        // Initialize counts for all emotions
+        Object.entries(emotionsMap).forEach(([id, name]) => {
+          counts[name] = 0;
+        });
+
+        // Count occurrences
+        data.forEach((item) => {
+          const emotion = emotionsMap[item.emotion];
+          if (emotion) {
+            counts[emotion] = (counts[emotion] || 0) + 1;
+          }
+        });
+
+        return counts;
+      }
+
+      // Populate class metrics table
+      function populateClassMetrics(classMetrics) {
+        const tableBody = document.getElementById("class-metrics");
+        tableBody.innerHTML = "";
+
+        if (!classMetrics || classMetrics.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 5;
+          cell.className =
+            "py-3 px-4 text-sm text-gray-500 text-center border-b";
+          cell.textContent = "Tidak ada data metrik yang tersedia";
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+          return;
+        }
+
+        classMetrics.forEach((item, index) => {
           const row = document.createElement("tr");
           row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
 
@@ -378,29 +551,8 @@
       }
 
       // Create Emotion Distribution Chart
-      function createEmotionChart() {
+      function createEmotionChart(emotionCounts) {
         const ctx = document.getElementById("emotion-chart").getContext("2d");
-
-        // Simulate data for emotion distribution
-        const emotionCounts = {
-          Senang: 28,
-          Percaya: 22,
-          Terkejut: 16,
-          Netral: 32,
-          Takut: 14,
-          Sedih: 24,
-          Marah: 19,
-        };
-
-        const backgroundColors = [
-          "rgba(54, 162, 235, 0.7)",
-          "rgba(75, 192, 192, 0.7)",
-          "rgba(255, 206, 86, 0.7)",
-          "rgba(201, 203, 207, 0.7)",
-          "rgba(153, 102, 255, 0.7)",
-          "rgba(255, 99, 132, 0.7)",
-          "rgba(255, 159, 64, 0.7)",
-        ];
 
         new Chart(ctx, {
           type: "bar",
@@ -410,8 +562,8 @@
               {
                 label: "Jumlah Data",
                 data: Object.values(emotionCounts),
-                backgroundColor: backgroundColors,
-                borderColor: backgroundColors.map((color) =>
+                backgroundColor: chartColors,
+                borderColor: chartColors.map((color) =>
                   color.replace("0.7", "1")
                 ),
                 borderWidth: 1,
@@ -450,30 +602,18 @@
       }
 
       // Create Confusion Matrix Chart
-      function createConfusionMatrix() {
+      function createConfusionMatrix(confusionMatrix) {
         const ctx = document
           .getElementById("confusion-matrix")
           .getContext("2d");
-
-        // Simulated confusion matrix data
-        const confusionMatrix = [
-          [24, 2, 0, 1, 0, 1, 0], // Senang
-          [1, 18, 1, 2, 0, 0, 0], // Percaya
-          [0, 1, 13, 1, 1, 0, 0], // Terkejut
-          [0, 1, 0, 28, 1, 2, 0], // Netral
-          [0, 0, 1, 1, 10, 1, 1], // Takut
-          [0, 0, 0, 2, 1, 19, 2], // Sedih
-          [0, 0, 1, 0, 1, 1, 16], // Marah
-        ];
+        const emotions = Object.values(emotionsMap);
 
         const data = {
           labels: emotions,
           datasets: emotions.map((emotion, i) => ({
             label: emotion,
             data: confusionMatrix[i],
-            backgroundColor: `rgba(${i * 36}, ${255 - i * 30}, ${
-              150 + i * 15
-            }, 0.8)`,
+            backgroundColor: chartColors[i],
           })),
         };
 
@@ -519,11 +659,100 @@
         });
       }
 
-      // Initialize page
+      // Update performance metrics display
+      function updatePerformanceMetrics(metrics) {
+        document.getElementById("accuracy").textContent = metrics.accuracy;
+        document.getElementById("precision").textContent = metrics.precision;
+        document.getElementById("recall").textContent = metrics.recall;
+        document.getElementById("f1-score").textContent = metrics.f1Score;
+      }
+
+      // Main function to load and analyze data
+      async function loadAndAnalyzeData() {
+        try {
+          // Fetch prediction results
+          const predictionData = await fetchPredictionResults();
+
+          if (!predictionData || predictionData.length === 0) {
+            updateStatus(
+              "Tidak ada data prediksi yang valid untuk dianalisis.",
+              true
+            );
+            return;
+          }
+
+          // Calculate metrics
+          const metrics = calculateMetrics(predictionData);
+
+          // Generate confusion matrix
+          const confusionMatrix = generateConfusionMatrix(predictionData);
+
+          // Count emotions
+          const emotionCounts = countEmotions(predictionData);
+
+          // Update UI with results
+          updatePerformanceMetrics(metrics);
+          populateClassMetrics(metrics.classMetrics);
+          createEmotionChart(emotionCounts);
+          createConfusionMatrix(confusionMatrix);
+
+          // Update status
+          updateStatus(
+            `Model telah berhasil dilatih dengan ${predictionData.length} data yang telah diproses!`
+          );
+
+          return true;
+        } catch (error) {
+          console.error("Error loading and analyzing data:", error);
+          updateStatus(`Terjadi kesalahan: ${error.message}`, true);
+          return false;
+        }
+      }
+
+      // Toggle sidebar on mobile
+      document
+        .getElementById("toggle-sidebar")
+        .addEventListener("click", function () {
+          const sidebar = document.getElementById("sidebar");
+          const mainContent = document.getElementById("main-content");
+
+          if (sidebar.classList.contains("-ml-64")) {
+            sidebar.classList.remove("-ml-64");
+            mainContent.classList.remove("ml-0");
+          } else {
+            sidebar.classList.add("-ml-64");
+            mainContent.classList.add("ml-0");
+            mainContent.classList.remove("ml-64");
+          }
+        });
+
+      // Check if mobile on load
+      function checkMobile() {
+        if (window.innerWidth < 1024) {
+          document.getElementById("sidebar").classList.add("-ml-64");
+          document.getElementById("main-content").classList.add("ml-0");
+          document.getElementById("main-content").classList.remove("ml-64");
+        } else {
+          document.getElementById("sidebar").classList.remove("-ml-64");
+          document.getElementById("main-content").classList.remove("ml-0");
+          document.getElementById("main-content").classList.add("ml-64");
+        }
+      }
+
+      window.addEventListener("resize", checkMobile);
+      checkMobile();
+
+      // Set active menu item
+      document
+        .getElementById("nav-training")
+        .classList.add("active", "border-blue-600");
+      document
+        .getElementById("nav-training")
+        .classList.remove("border-transparent");
+
+      // Run processing when page loads
       document.addEventListener("DOMContentLoaded", function () {
-        populateClassMetrics();
-        createEmotionChart();
-        createConfusionMatrix();
+        loadAndAnalyzeData();
       });
     </script>
   </body>

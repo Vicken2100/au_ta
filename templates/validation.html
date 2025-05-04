@@ -200,7 +200,39 @@
     </div>
 
     <script>
-      // Toggle sidebar on mobile
+      // API endpoint configuration
+      const API_ENDPOINTS = {
+        PREDICT: "/predict",
+      };
+
+      // Emotion mapping with colors
+      const emotionsMap = {
+        1: { name: "Senang", color: "bg-green-500" },
+        2: { name: "Percaya", color: "bg-blue-500" },
+        3: { name: "Terkejut", color: "bg-yellow-500" },
+        4: { name: "Netral", color: "bg-gray-500" },
+        5: { name: "Takut", color: "bg-purple-500" },
+        6: { name: "Sedih", color: "bg-sky-500" },
+        7: { name: "Marah", color: "bg-red-500" },
+      };
+
+      // Initialize prediction history
+      let predictionHistory = [];
+
+      // Initialize the page
+      document.addEventListener("DOMContentLoaded", function () {
+        loadHistory();
+      });
+
+      // Set active menu item
+      document
+        .getElementById("nav-validation")
+        .classList.add("active", "border-blue-600");
+      document
+        .getElementById("nav-validation")
+        .classList.remove("border-transparent");
+
+      // Mobile sidebar toggle
       document
         .getElementById("toggle-sidebar")
         .addEventListener("click", function () {
@@ -232,41 +264,6 @@
 
       window.addEventListener("resize", checkMobile);
       checkMobile();
-
-      // Set active menu item
-      document
-        .getElementById("nav-validation")
-        .classList.add("active", "border-blue-600");
-      document
-        .getElementById("nav-validation")
-        .classList.remove("border-transparent");
-
-      // Daftar emosi berdasarkan list yang diberikan
-      const emotionsMap = {
-        1: "Senang",
-        2: "Percaya",
-        3: "Terkejut",
-        4: "Netral",
-        5: "Takut",
-        6: "Sedih",
-        7: "Marah",
-      };
-
-      const emotions = Object.values(emotionsMap);
-
-      // Color mapping for emotions
-      const emotionColors = {
-        Senang: "bg-blue-500",
-        Percaya: "bg-teal-500",
-        Terkejut: "bg-yellow-500",
-        Netral: "bg-gray-500",
-        Takut: "bg-purple-500",
-        Sedih: "bg-red-500",
-        Marah: "bg-orange-500",
-      };
-
-      // Prediction history
-      let predictionHistory = [];
 
       // Load prediction history from localStorage
       function loadHistory() {
@@ -325,11 +322,14 @@
           const emotionCell = document.createElement("td");
           emotionCell.className = "py-3 px-4 text-sm border-b border-gray-200";
 
+          const emotionObj = emotionsMap[item.emotion] || {
+            name: `Unknown (${item.emotion})`,
+            color: "bg-gray-500",
+          };
+
           const emotionBadge = document.createElement("span");
-          emotionBadge.className = `px-2 py-1 rounded-full text-white text-xs ${
-            emotionColors[item.emotion] || "bg-gray-500"
-          }`;
-          emotionBadge.textContent = item.emotion;
+          emotionBadge.className = `px-2 py-1 rounded-full text-white text-xs ${emotionObj.color}`;
+          emotionBadge.textContent = emotionObj.name;
 
           emotionCell.appendChild(emotionBadge);
           row.appendChild(emotionCell);
@@ -351,126 +351,87 @@
         });
       }
 
-      // Make a prediction
-      function predictEmotion(text) {
-        // This is a simulated prediction. In a real application, this would call a backend API
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            // Some sample texts and associated emotions for the demo
-            const sampleTexts = {
-              "saya senang": "Senang",
-              "saya bahagia": "Senang",
-              "saya percaya": "Percaya",
-              "saya yakin": "Percaya",
-              "saya terkejut": "Terkejut",
-              astaga: "Terkejut",
-              "biasa saja": "Netral",
-              "ya begitulah": "Netral",
-              "saya takut": "Takut",
-              "saya khawatir": "Takut",
-              "saya sedih": "Sedih",
-              "saya kecewa": "Sedih",
-              "saya marah": "Marah",
-              "saya kesal": "Marah",
-            };
+      // Display word-level emotion details
+      function displayWordEmotions(wordEmotions) {
+        const resultsContainer = document.getElementById("prediction-result");
+        resultsContainer.classList.remove("hidden");
 
-            let detectedEmotion = "Netral"; // Default
-            let highestConfidence = 0.2; // Base confidence for neutral
+        // Create the word emotions container if it doesn't exist
+        let wordContainer = document.getElementById("word-emotions-container");
+        if (!wordContainer) {
+          // Create the detailed results structure
+          const detailsSection = document.createElement("div");
+          detailsSection.className =
+            "mt-4 border border-gray-300 rounded-md overflow-hidden";
+          detailsSection.innerHTML = `
+      <div class="bg-gray-100 p-4">
+        <h5 class="text-lg font-semibold mb-2">Detail Emosi Per Kata:</h5>
+        <div id="word-emotions-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+      </div>
+    `;
+          resultsContainer.appendChild(detailsSection);
+          wordContainer = document.getElementById("word-emotions-container");
+        } else {
+          wordContainer.innerHTML = ""; // Clear previous results
+        }
 
-            const lowercaseText = text.toLowerCase();
+        // Sort words by emotion for better grouping
+        const sortedWords = Object.entries(wordEmotions).sort(
+          (a, b) => a[1] - b[1]
+        );
 
-            // Check if the text contains any of the sample phrases
-            for (const [phrase, emotion] of Object.entries(sampleTexts)) {
-              if (lowercaseText.includes(phrase)) {
-                detectedEmotion = emotion;
-                highestConfidence = 0.7 + Math.random() * 0.25; // Random between 0.7 and 0.95
-                break;
-              }
-            }
+        // Create elements for each word and its emotion
+        sortedWords.forEach(([word, emotionId]) => {
+          const emotionObj = emotionsMap[emotionId] || {
+            name: "Tidak diketahui",
+            color: "bg-gray-400",
+          };
 
-            // Generate some random probabilities for all emotions
-            const probabilities = {};
-            let remainingProbability = 1 - highestConfidence;
+          const wordItem = document.createElement("div");
+          wordItem.className =
+            "flex items-center justify-between p-2 bg-white rounded shadow-sm";
 
-            for (const emotion of emotions) {
-              if (emotion === detectedEmotion) {
-                probabilities[emotion] = highestConfidence;
-              } else {
-                const randomProb = remainingProbability * Math.random();
-                probabilities[emotion] = randomProb;
-                remainingProbability -= randomProb;
-              }
-            }
+          wordItem.innerHTML = `
+      <span class="font-medium">${word}</span>
+      <span class="px-2 py-1 rounded-full text-white text-xs ${emotionObj.color}">${emotionObj.name}</span>
+    `;
 
-            // Normalize probabilities to ensure they sum to 1
-            const totalProb = Object.values(probabilities).reduce(
-              (sum, p) => sum + p,
-              0
-            );
-            for (const emotion of emotions) {
-              probabilities[emotion] = probabilities[emotion] / totalProb;
-            }
-
-            resolve({
-              text: text,
-              emotion: detectedEmotion,
-              confidence: probabilities[detectedEmotion],
-              probabilities: probabilities,
-              time: new Date().toLocaleString(),
-            });
-          }, 1000); // Simulate processing delay
+          wordContainer.appendChild(wordItem);
         });
       }
 
-      // Display prediction results
-      function displayPredictionResults(result) {
-        // Show result section
-        document.getElementById("prediction-result").classList.remove("hidden");
-
-        // Update detected emotion
-        const detectedEmotionElement =
-          document.getElementById("detected-emotion");
-        detectedEmotionElement.textContent = result.emotion;
-        detectedEmotionElement.className = "text-center p-4 text-2xl font-bold";
-
-        // Add a color highlight based on the emotion
-        const colorClass = emotionColors[result.emotion];
-        if (colorClass) {
-          detectedEmotionElement.classList.add(
-            "text-white",
-            "rounded-lg",
-            "py-2",
-            colorClass.replace("bg-", "bg-")
-          );
-        }
-
-        // Update probability scores
+      // Display probability bars
+      function displayProbabilityBars(probabilities) {
         const probabilityScoresContainer =
           document.getElementById("probability-scores");
         probabilityScoresContainer.innerHTML = "";
 
         // Sort emotions by probability
-        const sortedEmotions = emotions.sort(
-          (a, b) => result.probabilities[b] - result.probabilities[a]
+        const sortedEmotions = Object.keys(probabilities).sort(
+          (a, b) => probabilities[b] - probabilities[a]
         );
 
-        sortedEmotions.forEach((emotion) => {
-          const probability = result.probabilities[emotion];
+        sortedEmotions.forEach((emotionId) => {
+          const probability = probabilities[emotionId];
           const percentage = (probability * 100).toFixed(1);
+          const emotionObj = emotionsMap[emotionId] || {
+            name: `Unknown (${emotionId})`,
+            color: "bg-gray-500",
+          };
 
           const barContainer = document.createElement("div");
-          barContainer.className = "flex items-center";
+          barContainer.className = "flex items-center mb-2";
 
           const label = document.createElement("div");
           label.className = "w-24 text-sm font-medium";
-          label.textContent = emotion;
+          label.textContent = emotionObj.name;
 
           const barWrapper = document.createElement("div");
           barWrapper.className =
             "flex-1 h-6 bg-gray-200 rounded-full overflow-hidden";
 
           const bar = document.createElement("div");
-          bar.className = `h-full ${emotionColors[emotion] || "bg-gray-500"}`;
+          bar.className = `h-full ${emotionObj.color}`;
           bar.style.width = `${percentage}%`;
 
           const percentageText = document.createElement("div");
@@ -484,52 +445,219 @@
 
           probabilityScoresContainer.appendChild(barContainer);
         });
-
-        // Add to history
-        predictionHistory.unshift(result);
-        if (predictionHistory.length > 20) {
-          predictionHistory.pop(); // Limit history to 20 items
-        }
-        saveHistory();
-        updateHistoryTable();
       }
 
-      // Form submission handler
-      document
-        .getElementById("prediction-form")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
+      // Make emotion prediction API call
+      async function predictEmotion(text) {
+        try {
+          const response = await fetch(API_ENDPOINTS.PREDICT, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: text }),
+          });
 
-          const inputText = document.getElementById("input-text").value.trim();
-          if (!inputText) {
-            alert("Silakan masukkan teks terlebih dahulu!");
-            return;
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
 
+          const data = await response.json();
+
+          if (data.status !== "success") {
+            throw new Error(data.message || "Unknown error occurred");
+          }
+
+          // Extract emotion information
+          const emotionId = data.result.emotion;
+          const emotionObj = emotionsMap[emotionId] || {
+            name: "Tidak diketahui",
+            color: "bg-gray-400",
+          };
+
+          // Generate probabilities (the API might not provide this)
+          // This is a fallback if the API doesn't provide probabilities
+          const probabilities = {};
+          for (const id in emotionsMap) {
+            probabilities[id] =
+              id == emotionId
+                ? 0.85
+                : 0.15 / (Object.keys(emotionsMap).length - 1);
+          }
+
+          // Create result object
+          const result = {
+            text: text,
+            emotion: emotionId,
+            confidence: 0.85, // Default value if not provided by API
+            probabilities: probabilities,
+            time: new Date().toLocaleString(),
+            wordEmotions: data.result.desc || {}, // Word-level emotions
+          };
+
+          return result;
+        } catch (error) {
+          console.error("Error predicting emotion:", error);
+          throw error;
+        }
+      }
+
+      // Process prediction and display results
+      async function processPrediction(text) {
+        if (!text) {
+          alert("Silakan masukkan teks terlebih dahulu!");
+          return;
+        }
+
+        // Get form button
+        const submitButton = document.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.innerHTML;
+
+        try {
           // Show loading state
-          const submitButton = this.querySelector('button[type="submit"]');
-          const originalButtonText = submitButton.innerHTML;
           submitButton.disabled = true;
           submitButton.innerHTML =
             '<i class="fas fa-spinner fa-spin mr-2"></i> Memproses...';
 
-          try {
-            const result = await predictEmotion(inputText);
-            displayPredictionResults(result);
-          } catch (error) {
-            console.error("Prediction error:", error);
-            alert("Terjadi kesalahan saat memproses teks. Silakan coba lagi.");
-          } finally {
-            // Restore button state
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalButtonText;
+          // Make prediction
+          const result = await predictEmotion(text);
+
+          // Show result section
+          const resultElement = document.getElementById("prediction-result");
+          resultElement.classList.remove("hidden");
+
+          // Update detected emotion
+          const detectedEmotionElement =
+            document.getElementById("detected-emotion");
+          const emotionObj = emotionsMap[result.emotion] || {
+            name: "Tidak diketahui",
+            color: "bg-gray-400",
+          };
+
+          detectedEmotionElement.innerHTML = `
+      <span class="px-3 py-1 rounded-full text-white ${emotionObj.color}">${emotionObj.name}</span>
+    `;
+
+          // Display probability bars
+          displayProbabilityBars(result.probabilities);
+
+          // Display word-level emotions
+          if (
+            result.wordEmotions &&
+            Object.keys(result.wordEmotions).length > 0
+          ) {
+            displayWordEmotions(result.wordEmotions);
           }
+
+          // Add to prediction history
+          predictionHistory.unshift(result);
+          if (predictionHistory.length > 20) {
+            predictionHistory.pop(); // Limit history to 20 items
+          }
+
+          // Save and update history
+          saveHistory();
+          updateHistoryTable();
+        } catch (error) {
+          console.error("Error processing prediction:", error);
+          alert(
+            `Error: ${
+              error.message || "Failed to process prediction. Please try again."
+            }`
+          );
+        } finally {
+          // Restore button state
+          submitButton.disabled = false;
+          submitButton.innerHTML = originalButtonText;
+        }
+      }
+
+      // Form submission event handler
+      document
+        .getElementById("prediction-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const inputText = document.getElementById("input-text").value.trim();
+          processPrediction(inputText);
         });
 
-      // Initialize page
-      document.addEventListener("DOMContentLoaded", function () {
-        loadHistory();
-      });
+      // Mock prediction when actual API is not available
+      function mockPrediction(text) {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            // Determine emotion based on text content
+            let emotionId = 4; // Default to Neutral
+            let confidence = 0.7 + Math.random() * 0.25;
+            let wordEmotions = {};
+
+            // Create a simple word-emotion mapping
+            const words = text.toLowerCase().split(/\s+/);
+            words.forEach((word) => {
+              if (word.length <= 1) return;
+
+              let wordEmotionId = 4; // Default neutral
+
+              if (/senang|bahagia|gembira|ceria/.test(word)) wordEmotionId = 1;
+              else if (/percaya|yakin|setuju/.test(word)) wordEmotionId = 2;
+              else if (/terkejut|kaget|wow|astaga/.test(word))
+                wordEmotionId = 3;
+              else if (/takut|khawatir|cemas/.test(word)) wordEmotionId = 5;
+              else if (/sedih|kecewa|pilu/.test(word)) wordEmotionId = 6;
+              else if (/marah|kesal|geram|benci/.test(word)) wordEmotionId = 7;
+
+              wordEmotions[word] = wordEmotionId;
+            });
+
+            // Determine dominant emotion from words
+            const emotionCounts = {};
+            Object.values(wordEmotions).forEach((emotionId) => {
+              emotionCounts[emotionId] = (emotionCounts[emotionId] || 0) + 1;
+            });
+
+            let maxCount = 0;
+            for (const [id, count] of Object.entries(emotionCounts)) {
+              if (count > maxCount) {
+                maxCount = count;
+                emotionId = id;
+              }
+            }
+
+            // Generate probabilities for all emotions
+            const probabilities = {};
+            let remainingProbability = 1 - confidence;
+
+            for (const id in emotionsMap) {
+              if (id == emotionId) {
+                probabilities[id] = confidence;
+              } else {
+                const randomProb = remainingProbability * Math.random();
+                probabilities[id] = randomProb;
+                remainingProbability -= randomProb;
+              }
+            }
+
+            // Normalize probabilities to ensure they sum to 1
+            const totalProb = Object.values(probabilities).reduce(
+              (sum, p) => sum + p,
+              0
+            );
+            for (const id in probabilities) {
+              probabilities[id] = probabilities[id] / totalProb;
+            }
+
+            // Create mock API response format
+            const mockResponse = {
+              status: "success",
+              result: {
+                emotion: emotionId,
+                desc: wordEmotions,
+              },
+            };
+
+            resolve(mockResponse);
+          }, 1000); // Simulate API delay
+        });
+      }
     </script>
   </body>
 </html>

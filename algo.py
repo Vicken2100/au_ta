@@ -308,6 +308,8 @@ def predict_word(word):
     desc = {}
     while index < max_len:
         word = split_proccess_text[index]
+        if word == "nan":
+            word = "dan"
         
         # Case 1: Intensifier + Negasi (contoh: "sangat tidak baik")
         if word in intensifier_words and index + 2 < max_len and split_proccess_text[index + 1] in negation_words:
@@ -364,7 +366,7 @@ def predict_word(word):
     
     # Menentukan emosi dominan
     dominant_emotion = max(total, key=total.get)
-    return dominant_emotion, desc
+    return dominant_emotion, desc, split_proccess_text
 
 def predic_dataset():
     """
@@ -394,14 +396,16 @@ def predic_dataset():
 
     # Tambahkan kolom prediksi
     dataset_unique['predict'] = "4"  # Default netral
+    dataset_unique["words"] = ""
     
     print("Memulai prediksi emosi...")
     for i, tweet in enumerate(dataset_unique.index.values):
         try:
             # Prediksi emosi menggunakan fungsi eksternal
-            emotion, _ = predict_word(tweet)
+            emotion, _, words = predict_word(tweet)
             # Simpan hasil prediksi
             dataset_unique.at[tweet, 'predict'] = emotion
+            dataset_unique.at[tweet, 'words'] = words
             
             if (i + 1) % 50 == 0:
                 print(f"Memproses tweet {i+1}/{len(dataset_unique)}")

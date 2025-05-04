@@ -99,8 +99,12 @@
               Pemrosesan Data (Level Kalimat)
             </h2>
 
-            <div class="mb-6 p-4 bg-blue-50 text-blue-800 rounded-md">
-              Pemrosesan data pada level kalimat sedang berlangsung...
+            <!-- Status message and progress bar -->
+            <div
+              id="status-message"
+              class="mb-6 p-4 bg-blue-50 text-blue-800 rounded-md"
+            >
+              Memuat hasil prediksi emosi...
             </div>
             <div class="mb-6 bg-gray-200 rounded-full h-4 overflow-hidden">
               <div
@@ -110,24 +114,20 @@
               ></div>
             </div>
 
+            <!-- Results explanation -->
             <div class="mb-6">
-              <h4 class="text-xl font-semibold mb-4">
-                Pemrosesan Level Kalimat
-              </h4>
+              <h4 class="text-xl font-semibold mb-4">Hasil Prediksi Emosi</h4>
               <p class="mb-4 text-gray-600">
-                Pada tahap ini, data akan diproses pada level kalimat dengan
-                metode berikut:
+                Tabel di bawah ini menunjukkan hasil prediksi emosi dari tweet
+                yang berkaitan dengan kinerja polisi. Emosi Manual adalah emosi
+                yang dianotasi secara manual, sedangkan Emosi Otomatis adalah
+                hasil prediksi dari model machine learning.
               </p>
-              <ul class="list-disc pl-6 mb-4 text-gray-600">
-                <li>Tokenisasi kalimat</li>
-                <li>Penghapusan stop words</li>
-                <li>Stemming untuk mendapatkan kata dasar</li>
-                <li>Analisis sentimen berdasarkan emosi teks</li>
-              </ul>
             </div>
 
+            <!-- Results table -->
             <h4 class="text-xl font-semibold mb-4">
-              Hasil Pemrosesan Level Kalimat
+              Hasil Perbandingan Prediksi Emosi
             </h4>
             <div class="overflow-auto max-h-96 rounded-lg shadow-md">
               <table class="min-w-full bg-white">
@@ -141,39 +141,40 @@
                     <th
                       class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
                     >
-                      Data Original
+                      Tweet
                     </th>
                     <th
                       class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
                     >
-                      Token Kalimat
+                      Token Kata
                     </th>
                     <th
                       class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
                     >
-                      Setelah Stemming
+                      Emosi Manual
                     </th>
                     <th
                       class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
                     >
-                      Emosi
-                    </th>
-                    <th
-                      class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
-                    >
-                      Skor Sentimen
+                      Emosi Otomatis
                     </th>
                   </tr>
                 </thead>
                 <tbody id="sentence-processing-results">
-                  <!-- Hasil akan diisi dengan JavaScript -->
+                  <!-- Results will be populated by JavaScript -->
+                  <tr>
+                    <td colspan="5" class="py-4 px-4 text-center text-gray-500">
+                      Memuat data...
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
 
+            <!-- Navigation buttons -->
             <div class="flex justify-end mt-6">
               <a
-                href="training-results.html"
+                href="/training-results"
                 id="view-training-results"
                 class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
               >
@@ -186,6 +187,22 @@
     </div>
 
     <script>
+      // API endpoint configuration
+      const API_ENDPOINTS = {
+        PREDICT_RESULT: "/api/predict-result",
+      };
+
+      // Emotion mapping - maps numeric IDs to emotion names and colors
+      const emotionMap = {
+        1: { name: "Senang", color: "text-green-600" },
+        2: { name: "Percaya", color: "text-blue-500" },
+        3: { name: "Terkejut", color: "text-purple-600" },
+        4: { name: "Netral", color: "text-gray-600" },
+        5: { name: "Takut", color: "text-yellow-600" },
+        6: { name: "Sedih", color: "text-indigo-600" },
+        7: { name: "Marah", color: "text-red-600" },
+      };
+
       // Toggle sidebar on mobile
       document
         .getElementById("toggle-sidebar")
@@ -219,6 +236,261 @@
       window.addEventListener("resize", checkMobile);
       checkMobile();
 
+      // Function to update status message
+      function updateStatus(message, isError = false) {
+        const statusElement = document.getElementById("status-message");
+        statusElement.textContent = message;
+
+        if (isError) {
+          statusElement.classList.remove("bg-blue-50", "text-blue-800");
+          statusElement.classList.add("bg-red-50", "text-red-800");
+        } else {
+          statusElement.classList.remove("bg-red-50", "text-red-800");
+          statusElement.classList.add("bg-blue-50", "text-blue-800");
+        }
+      }
+
+      // Fetch data from API with error handling for NaN values
+      async function fetchPredictionResults() {
+        try {
+          updateStatus("Memuat hasil prediksi emosi dari server...");
+
+          const response = await fetch(API_ENDPOINTS.PREDICT_RESULT);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          // Get the raw text response first
+          const rawText = await response.text();
+
+          // Try to fix any potential NaN issues by replacing NaN with "NaN"
+          const fixedText = rawText.replace(/: NaN/g, ': "NaN"');
+
+          try {
+            // Parse the fixed JSON
+            const data = JSON.parse(fixedText);
+            return validatePredictionData(data);
+          } catch (parseError) {
+            console.error("Error parsing fixed JSON:", parseError);
+            console.log("Problematic JSON:", rawText);
+            throw parseError;
+          }
+        } catch (error) {
+          console.error("Error fetching prediction results:", error);
+          updateStatus(
+            `Error: ${error.message}. Silakan coba lagi nanti.`,
+            true
+          );
+          throw error;
+        }
+      }
+
+      // Validate prediction data
+      function validatePredictionData(data) {
+        if (!Array.isArray(data)) {
+          console.error("Data is not an array");
+          return [];
+        }
+
+        // Filter out invalid items
+        const validData = data.filter((item) => {
+          // Check if required fields exist
+          if (!item || typeof item !== "object") return false;
+          if (item.tweet === undefined || item.tweet === null) return false;
+          if (item.emotion === undefined || item.emotion === null) return false;
+          if (item.predict === undefined || item.predict === null) return false;
+
+          // Check for NaN values
+          if (
+            item.tweet === "NaN" ||
+            (typeof item.tweet === "number" && isNaN(item.tweet))
+          )
+            return false;
+
+          // Check tweet length
+          if (typeof item.tweet === "string" && item.tweet.length <= 1)
+            return false;
+
+          return true;
+        });
+
+        if (validData.length === 0) {
+          console.warn("No valid prediction data found");
+        } else if (validData.length < data.length) {
+          console.warn(
+            `Filtered out ${data.length - validData.length} invalid items`
+          );
+        }
+
+        return validData;
+      }
+
+      // Process and parse words if they come as a string representation of list
+      function parseWords(wordsData) {
+        if (!wordsData) return [];
+
+        // If already an array, return as is
+        if (Array.isArray(wordsData)) return wordsData;
+
+        // If a string, try to parse it
+        if (typeof wordsData === "string") {
+          try {
+            // Replace Python-style list formatting with JSON format
+            const jsonStr = wordsData
+              .replace(/'/g, '"') // Replace single quotes with double quotes
+              .replace(/\[|\]/g, ""); // Remove brackets
+
+            // Split by comma and clean up each word
+            return jsonStr
+              .split(",")
+              .map(
+                (word) => word.trim().replace(/^"|"$/g, "") // Trim and remove quotes
+              )
+              .filter((word) => word.length > 0); // Remove empty items
+          } catch (e) {
+            console.error("Error parsing words string:", e);
+            return [wordsData]; // Return the string itself as a fallback
+          }
+        }
+
+        return [];
+      }
+
+      // Display prediction results in the table
+      function displayPredictionResults(data) {
+        const resultsTable = document.getElementById(
+          "sentence-processing-results"
+        );
+        resultsTable.innerHTML = "";
+
+        if (!data || data.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 5;
+          cell.className =
+            "py-3 px-4 text-sm text-gray-500 text-center border-b";
+          cell.textContent = "Tidak ada data prediksi yang tersedia";
+          row.appendChild(cell);
+          resultsTable.appendChild(row);
+          return;
+        }
+
+        data.forEach((item, index) => {
+          // Process words field
+          const wordTokens = parseWords(item.words);
+
+          // Create table row
+          const row = document.createElement("tr");
+          row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+          // No column
+          const numberCell = document.createElement("td");
+          numberCell.className = "py-3 px-4 text-sm border-b border-gray-200";
+          numberCell.textContent = index + 1;
+          row.appendChild(numberCell);
+
+          // Tweet column
+          const tweetCell = document.createElement("td");
+          tweetCell.className = "py-3 px-4 text-sm border-b border-gray-200";
+          tweetCell.textContent = item.tweet;
+          row.appendChild(tweetCell);
+
+          // Token column (words)
+          const tokenCell = document.createElement("td");
+          tokenCell.className = "py-3 px-4 text-sm border-b border-gray-200";
+          tokenCell.textContent = wordTokens.join(", ");
+          row.appendChild(tokenCell);
+
+          // Manual Emotion column (emotion field)
+          const manualEmotionCell = document.createElement("td");
+          manualEmotionCell.className =
+            "py-3 px-4 text-sm border-b border-gray-200 font-semibold";
+          const manualEmotionObj = emotionMap[item.emotion] || {
+            name: `Unknown (${item.emotion})`,
+            color: "text-gray-600",
+          };
+          manualEmotionCell.textContent = manualEmotionObj.name;
+          manualEmotionCell.classList.add(manualEmotionObj.color);
+          row.appendChild(manualEmotionCell);
+
+          // Automatic Emotion column (predict field)
+          const autoEmotionCell = document.createElement("td");
+          autoEmotionCell.className =
+            "py-3 px-4 text-sm border-b border-gray-200 font-semibold";
+          const autoEmotionObj = emotionMap[item.predict] || {
+            name: `Unknown (${item.predict})`,
+            color: "text-gray-600",
+          };
+          autoEmotionCell.textContent = autoEmotionObj.name;
+          autoEmotionCell.classList.add(autoEmotionObj.color);
+
+          // Add indicator for match/mismatch
+          if (item.emotion === item.predict) {
+            // Prediction matches manual annotation - add checkmark
+            const checkIcon = document.createElement("i");
+            checkIcon.className = "fas fa-check-circle ml-2 text-green-600";
+            autoEmotionCell.appendChild(checkIcon);
+          } else {
+            // Prediction doesn't match - add X mark
+            const xIcon = document.createElement("i");
+            xIcon.className = "fas fa-times-circle ml-2 text-red-600";
+            autoEmotionCell.appendChild(xIcon);
+          }
+
+          row.appendChild(autoEmotionCell);
+
+          resultsTable.appendChild(row);
+        });
+      }
+
+      // Main function to load and process data
+      async function processEmotionData() {
+        try {
+          // Setup progress bar
+          const progressBar = document.getElementById("progress-bar");
+          let progress = 0;
+
+          // Start progress animation
+          const interval = setInterval(() => {
+            progress += 2;
+            if (progress > 90) progress = 90; // Cap at 90% until data is loaded
+            progressBar.style.width = `${progress}%`;
+          }, 100);
+
+          // Fetch data from API
+          const predictionData = await fetchPredictionResults();
+
+          // Complete progress bar
+          clearInterval(interval);
+          progress = 100;
+          progressBar.style.width = `${progress}%`;
+
+          // Update status message
+          updateStatus(
+            `Berhasil memuat ${predictionData.length} data prediksi emosi.`
+          );
+
+          // Display results
+          displayPredictionResults(predictionData);
+
+          return true;
+        } catch (error) {
+          console.error("Error processing emotion data:", error);
+
+          // Update status with error
+          updateStatus(`Terjadi kesalahan: ${error.message}`, true);
+
+          // Complete progress bar (as error)
+          const progressBar = document.getElementById("progress-bar");
+          progressBar.style.width = "100%";
+          progressBar.classList.remove("bg-blue-600");
+          progressBar.classList.add("bg-red-600");
+
+          return false;
+        }
+      }
+
       // Set active menu item
       document
         .getElementById("nav-sentence")
@@ -227,195 +499,9 @@
         .getElementById("nav-sentence")
         .classList.remove("border-transparent");
 
-      // LocalStorage functions for data persistence
-      function saveData(data) {
-        localStorage.setItem("processedData", JSON.stringify(data));
-      }
-
-      function loadData() {
-        const savedData = localStorage.getItem("currentData");
-        if (savedData) {
-          return JSON.parse(savedData);
-        }
-        return [];
-      }
-
-      // Daftar stop words bahasa Indonesia
-      const stopWords = [
-        "yang",
-        "di",
-        "dan",
-        "itu",
-        "dengan",
-        "untuk",
-        "pada",
-        "adalah",
-        "ini",
-        "dari",
-        "dalam",
-        "akan",
-        "tidak",
-        "mereka",
-        "tersebut",
-        "oleh",
-      ];
-
-      // Stem function (simplified)
-      function stemWord(word) {
-        // This is a very simplified stemming - in reality, you'd use a proper stemmer
-        const prefixes = ["me", "pe", "ber", "di", "ke", "se"];
-        const suffixes = ["kan", "an", "i", "nya"];
-
-        let stemmed = word;
-
-        // Remove prefixes
-        for (const prefix of prefixes) {
-          if (
-            stemmed.startsWith(prefix) &&
-            stemmed.length > prefix.length + 2
-          ) {
-            stemmed = stemmed.substring(prefix.length);
-            break;
-          }
-        }
-
-        // Remove suffixes
-        for (const suffix of suffixes) {
-          if (stemmed.endsWith(suffix) && stemmed.length > suffix.length + 2) {
-            stemmed = stemmed.substring(0, stemmed.length - suffix.length);
-            break;
-          }
-        }
-
-        return stemmed;
-      }
-
-      // Sentiment score mapping
-      const sentimentMap = {
-        Senang: 0.8,
-        Percaya: 0.6,
-        Terkejut: 0.3,
-        Netral: 0.0,
-        Takut: -0.5,
-        Sedih: -0.7,
-        Marah: -0.9,
-      };
-
-      // Process sentence level
-      function processSentenceLevel() {
-        const currentData = loadData();
-        if (currentData.length === 0) {
-          document.querySelector(".bg-blue-50").innerHTML =
-            "Tidak ada data untuk diproses. Silakan upload dataset terlebih dahulu.";
-          document
-            .getElementById("view-training-results")
-            .classList.add("opacity-50", "cursor-not-allowed");
-          document
-            .getElementById("view-training-results")
-            .addEventListener("click", function (e) {
-              e.preventDefault();
-              alert(
-                "Tidak ada data untuk diproses. Silakan upload dataset terlebih dahulu."
-              );
-            });
-          return;
-        }
-
-        const progressBar = document.getElementById("progress-bar");
-        let progress = 0;
-        const processed = [];
-
-        const interval = setInterval(() => {
-          progress += 5;
-          progressBar.style.width = `${progress}%`;
-
-          if (progress >= 100) {
-            clearInterval(interval);
-            document.querySelector(".bg-blue-50").innerHTML =
-              "Pemrosesan data level kalimat telah selesai!";
-
-            // Process and display results
-            const resultsTable = document.getElementById(
-              "sentence-processing-results"
-            );
-            resultsTable.innerHTML = "";
-
-            currentData.forEach((item, index) => {
-              // Process data
-              const tokens = item.processed.split(" ");
-              const filteredTokens = tokens.filter(
-                (token) => !stopWords.includes(token)
-              );
-              const stemmedTokens = filteredTokens.map((token) =>
-                stemWord(token)
-              );
-              const sentimentScore = sentimentMap[item.emotion] || 0;
-
-              processed.push({
-                ...item,
-                tokens: filteredTokens,
-                stemmed: stemmedTokens,
-                sentimentScore: sentimentScore,
-              });
-
-              // Create table row
-              const row = document.createElement("tr");
-              row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
-
-              // No column
-              const numberCell = document.createElement("td");
-              numberCell.className =
-                "py-3 px-4 text-sm border-b border-gray-200";
-              numberCell.textContent = index + 1;
-              row.appendChild(numberCell);
-
-              // Original data column
-              const originalCell = document.createElement("td");
-              originalCell.className =
-                "py-3 px-4 text-sm border-b border-gray-200";
-              originalCell.textContent = item.original;
-              row.appendChild(originalCell);
-
-              // Token column
-              const tokenCell = document.createElement("td");
-              tokenCell.className =
-                "py-3 px-4 text-sm border-b border-gray-200";
-              tokenCell.textContent = filteredTokens.join(", ");
-              row.appendChild(tokenCell);
-
-              // Stemmed column
-              const stemmedCell = document.createElement("td");
-              stemmedCell.className =
-                "py-3 px-4 text-sm border-b border-gray-200";
-              stemmedCell.textContent = stemmedTokens.join(", ");
-              row.appendChild(stemmedCell);
-
-              // Emotion column
-              const emotionCell = document.createElement("td");
-              emotionCell.className =
-                "py-3 px-4 text-sm border-b border-gray-200";
-              emotionCell.textContent = item.emotion;
-              row.appendChild(emotionCell);
-
-              // Sentiment score column
-              const scoreCell = document.createElement("td");
-              scoreCell.className =
-                "py-3 px-4 text-sm border-b border-gray-200";
-              scoreCell.textContent = sentimentScore.toFixed(2);
-              row.appendChild(scoreCell);
-
-              resultsTable.appendChild(row);
-            });
-
-            // Save processed data
-            saveData(processed);
-          }
-        }, 100);
-      }
-
-      // Jalankan pemrosesan segera setelah halaman dimuat
+      // Run processing when page loads
       document.addEventListener("DOMContentLoaded", function () {
-        processSentenceLevel();
+        processEmotionData();
       });
     </script>
   </body>

@@ -18,6 +18,13 @@ def post_api_proccess():
     predic_dataset()
     return "success"
 
+@app.get("/api/predict-result")
+def get_api_data_proccess():
+    dataset = pd.read_csv("dataset_predicted.csv", index_col="tweet")
+    data_dict = dataset.reset_index().to_dict(orient="records")
+    return jsonify(data_dict)
+
+
 @app.get("/api/lexicon")
 def get_api_lexicon():
     dataset = combine_lexicon()
@@ -127,7 +134,7 @@ def predict():
                 "status": "error",
                 "message": "Field 'message' is required."
             }), 400
-        max_emotion, total = predict_word(message)
+        max_emotion, total, _ = predict_word(message)
         return jsonify({
                 "status": "success",
                 "result": {
