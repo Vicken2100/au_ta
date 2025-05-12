@@ -71,7 +71,7 @@
                 id="nav-validation"
               >
                 <i class="fas fa-check-circle mr-3"></i>
-                <span>Uji Validasi</span>
+                <span>Validasi</span>
               </a>
             </li>
           </ul>
@@ -187,6 +187,44 @@
             <!-- 2a. Daftar Emosi -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div>
+                <h3 class="text-xl font-semibold mb-4">
+                  2a. Seed Lexicon (Kamus Baku untuk Seed Lexicon)
+                </h3>
+                <div class="overflow-auto max-h-72 rounded-lg shadow-md">
+                  <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100 sticky top-0">
+                      <tr>
+                        <th
+                          class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-16"
+                        >
+                          ID
+                        </th>
+                        <th
+                          class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                        >
+                          Kata
+                        </th>
+                        <th
+                          class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                        >
+                          Label
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="lexicon-seed-table">
+                      <tr>
+                        <td
+                          colspan="3"
+                          class="py-4 px-4 text-center text-gray-500"
+                        >
+                          Memuat data...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="hidden">
                 <h3 class="text-xl font-semibold mb-4">2a. Daftar Emosi</h3>
                 <div class="overflow-auto max-h-72 rounded-lg shadow-md">
                   <table class="min-w-full bg-white">
@@ -251,7 +289,7 @@
             </div>
 
             <!-- 3. Seed Lexicon -->
-            <div class="mb-8">
+            <div class="mb-8 hidden">
               <h3 class="text-xl font-semibold mb-4">
                 3. Seed Lexicon (Kamus Baku untuk Seed Lexicon)
               </h3>
@@ -276,7 +314,101 @@
                       </th>
                     </tr>
                   </thead>
-                  <tbody id="lexicon-seed-table">
+                  <tbody id="lexicon-seed-table-alt">
+                    <tr>
+                      <td
+                        colspan="3"
+                        class="py-4 px-4 text-center text-gray-500"
+                      >
+                        Memuat data...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="mb-8">
+              <h3 class="text-xl font-semibold mb-4">3. Data Training</h3>
+              <div class="flex items-center justify-between mb-3">
+                <div class="text-gray-600">
+                  <span id="data-count" class="font-semibold">0</span> data
+                  ditemukan
+                </div>
+                <div class="flex items-center">
+                  <input
+                    type="text"
+                    id="data-search"
+                    placeholder="Cari tweet..."
+                    class="px-3 py-2 border border-gray-300 rounded-md mr-2 text-sm"
+                  />
+                  <button
+                    id="refresh-data-btn"
+                    class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md text-sm"
+                  >
+                    <i class="fas fa-sync-alt mr-1"></i> Refresh
+                  </button>
+                </div>
+              </div>
+              <div class="overflow-auto max-h-60 rounded-lg shadow-md">
+                <table class="min-w-full bg-white">
+                  <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-16"
+                      >
+                        No
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Tweet
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-32"
+                      >
+                        Emosi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="input-data-table">
+                    <tr>
+                      <td
+                        colspan="3"
+                        class="py-4 px-4 text-center text-gray-500"
+                      >
+                        Memuat data...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="mb-8 hidden">
+              <h3 class="text-xl font-semibold mb-4">3. Data Training</h3>
+              <div class="overflow-auto max-h-72 rounded-lg shadow-md">
+                <table class="min-w-full bg-white">
+                  <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b w-16"
+                      >
+                        ID
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Kata
+                      </th>
+                      <th
+                        class="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b"
+                      >
+                        Label
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="lexicon-data">
                     <tr>
                       <td
                         colspan="3"
@@ -397,6 +529,9 @@
         7: "Marah",
       };
 
+      // Store the original data for filtering
+      let originalInputData = [];
+
       // Show loader
       function showLoader(message = "Memuat data...") {
         document.getElementById("loader-message").textContent = message;
@@ -435,6 +570,68 @@
           console.error(`Error fetching data from ${endpoint}:`, error);
           throw error;
         }
+      }
+
+      // Function to update the input data table
+      function updateInputDataTable(data, filterText = "") {
+        const tableBody = document.getElementById("input-data-table");
+        const dataCountElement = document.getElementById("data-count");
+        tableBody.innerHTML = "";
+
+        // Store original data for filtering
+        if (!filterText) {
+          originalInputData = [...data];
+        }
+
+        // Filter data if search text is provided
+        let filteredData = data;
+        if (filterText) {
+          const searchLower = filterText.toLowerCase();
+          filteredData = data.filter((item) =>
+            item.tweet.toLowerCase().includes(searchLower)
+          );
+        }
+
+        // Update data count
+        dataCountElement.textContent = filteredData.length;
+
+        if (!filteredData || filteredData.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 3;
+          cell.className = "py-4 px-4 text-center text-gray-500";
+          cell.textContent = filterText
+            ? "Tidak ada data yang sesuai dengan pencarian"
+            : "Tidak ada data input";
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+          return;
+        }
+
+        filteredData.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+          // No column
+          const noCell = document.createElement("td");
+          noCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          noCell.textContent = index + 1;
+          row.appendChild(noCell);
+
+          // Tweet column
+          const tweetCell = document.createElement("td");
+          tweetCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          tweetCell.textContent = item.tweet;
+          row.appendChild(tweetCell);
+
+          // Emotion column
+          const emotionCell = document.createElement("td");
+          emotionCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          emotionCell.textContent = emotionsMap[item.emotion] || "Netral";
+          row.appendChild(emotionCell);
+
+          tableBody.appendChild(row);
+        });
       }
 
       // Function to update the candidate words table
@@ -581,6 +778,12 @@
       // Function to update lexicon seed table
       function updateLexiconSeedTable(data) {
         const tableBody = document.getElementById("lexicon-seed-table");
+        const altTableBody = document.getElementById("lexicon-seed-table-alt");
+
+        if (altTableBody) {
+          altTableBody.innerHTML = "";
+        }
+
         tableBody.innerHTML = "";
 
         if (!data || data.length === 0) {
@@ -592,6 +795,12 @@
           cell.textContent = "Tidak ada data seed lexicon";
           row.appendChild(cell);
           tableBody.appendChild(row);
+
+          if (altTableBody) {
+            const altRow = row.cloneNode(true);
+            altTableBody.appendChild(altRow);
+          }
+
           return;
         }
 
@@ -618,6 +827,12 @@
           row.appendChild(emotionCell);
 
           tableBody.appendChild(row);
+
+          // If alternative table exists, clone the row for it
+          if (altTableBody) {
+            const altRow = row.cloneNode(true);
+            altTableBody.appendChild(altRow);
+          }
         });
       }
 
@@ -664,23 +879,128 @@
         });
       }
 
+      // Function to update training data table
+      function updateTrainingDataTable(data) {
+        const tableBody = document.getElementById("lexicon-data");
+        tableBody.innerHTML = "";
+
+        if (!data || data.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 3;
+          cell.className =
+            "py-3 px-4 text-sm text-gray-500 text-center border-b";
+          cell.textContent = "Tidak ada data training";
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+          return;
+        }
+
+        // Process and transform the input data into training data format
+        // This is just a simplified example - in real app, this would be more complex
+        const processedData = [];
+
+        // Extract words and assign to their respective emotions
+        data.forEach((item) => {
+          const words = item.tweet.toLowerCase().split(/\s+/);
+          words.forEach((word) => {
+            if (word.length > 2) {
+              // Skip very short words
+              processedData.push({
+                word: word,
+                emotion: item.emotion,
+              });
+            }
+          });
+        });
+
+        // Group by words and count most common emotion
+        const wordStats = {};
+        processedData.forEach((item) => {
+          if (!wordStats[item.word]) {
+            wordStats[item.word] = {};
+          }
+
+          if (!wordStats[item.word][item.emotion]) {
+            wordStats[item.word][item.emotion] = 0;
+          }
+
+          wordStats[item.word][item.emotion]++;
+        });
+
+        // Convert to array and sort
+        const trainingData = Object.entries(wordStats).map(
+          ([word, emotions]) => {
+            // Find most common emotion for this word
+            let maxEmotion = 4; // Default to neutral
+            let maxCount = 0;
+
+            Object.entries(emotions).forEach(([emotion, count]) => {
+              if (count > maxCount) {
+                maxCount = count;
+                maxEmotion = parseInt(emotion);
+              }
+            });
+
+            return {
+              word: word,
+              emotion: maxEmotion,
+            };
+          }
+        );
+
+        // Sort alphabetically
+        trainingData.sort((a, b) => a.word.localeCompare(b.word));
+
+        // Display the first 100 items (to avoid too many rows)
+        const displayData = trainingData.slice(0, 100);
+
+        displayData.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+          // ID column
+          const idCell = document.createElement("td");
+          idCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          idCell.textContent = index + 1;
+          row.appendChild(idCell);
+
+          // Word column
+          const wordCell = document.createElement("td");
+          wordCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          wordCell.textContent = item.word;
+          row.appendChild(wordCell);
+
+          // Emotion column
+          const emotionCell = document.createElement("td");
+          emotionCell.className = "py-2 px-4 text-sm border-b border-gray-200";
+          emotionCell.textContent = emotionsMap[item.emotion] || "Netral";
+          row.appendChild(emotionCell);
+
+          tableBody.appendChild(row);
+        });
+      }
+
       // Function to load initial data
       async function loadInitialData() {
         showLoader("Memuat data awal...");
 
         try {
           // Fetch data from endpoints
-          const [lexiconData, seedData] = await Promise.all([
+          const [inputData, lexiconData, seedData] = await Promise.all([
+            fetchData("/api/data"),
             fetchData("/api/lexicon"),
             fetchData("/api/lexicon-seed"),
           ]);
 
           // Update all tables
+          updateInputDataTable(inputData);
           updateCandidateWordsTable(lexiconData, seedData);
           updateEmotionListTable(seedData);
           updateEmotionLabelsTable();
           updateLexiconSeedTable(seedData);
           updateUpdatedLexiconTable(lexiconData);
+          updateTrainingDataTable(inputData);
 
           updateStatus(
             'Data saat ini ditampilkan. Klik tombol "Proses Data" untuk memproses ulang.'
@@ -719,7 +1039,7 @@
             progress += 2;
             if (progress > 95) progress = 95; // Jangan sampai 100% sebelum selesai
             progressBar.style.width = `${progress}%`;
-          }, 1000);
+          }, 500);
 
           // Panggil API proses
           updateStatus("Menjalankan proses pemrosesan data...");
@@ -754,16 +1074,19 @@
           }
 
           // Fetch data from endpoints after processing
-          const [lexiconData, seedData] = await Promise.all([
+          const [inputData, lexiconData, seedData] = await Promise.all([
+            fetchData("/api/data"),
             fetchData("/api/lexicon"),
             fetchData("/api/lexicon-seed"),
           ]);
 
           // Update all tables
+          updateInputDataTable(inputData);
           updateCandidateWordsTable(lexiconData, seedData);
           updateEmotionListTable(seedData);
           updateLexiconSeedTable(seedData);
           updateUpdatedLexiconTable(lexiconData);
+          updateTrainingDataTable(inputData);
 
           // Ensure progress bar completes
           clearInterval(progressInterval);
@@ -796,11 +1119,44 @@
         }
       }
 
+      // Initialize search functionality
+      function initializeSearch() {
+        const searchInput = document.getElementById("data-search");
+        if (searchInput) {
+          searchInput.addEventListener("input", function () {
+            const searchText = this.value.trim();
+            updateInputDataTable(originalInputData, searchText);
+          });
+        }
+
+        // Refresh button
+        const refreshButton = document.getElementById("refresh-data-btn");
+        if (refreshButton) {
+          refreshButton.addEventListener("click", async function () {
+            try {
+              showLoader("Memperbarui data input...");
+              const inputData = await fetchData("/api/data");
+              updateInputDataTable(inputData);
+              document.getElementById("data-search").value = "";
+              hideLoader();
+              updateStatus("Data input berhasil diperbarui.");
+            } catch (error) {
+              hideLoader();
+              updateStatus(
+                "Gagal memperbarui data input: " + error.message,
+                true
+              );
+            }
+          });
+        }
+      }
+
       // Load initial data when page loads
       document.addEventListener("DOMContentLoaded", function () {
         // Load initial data and emotion labels
         loadInitialData();
         updateEmotionLabelsTable();
+        initializeSearch();
       });
 
       // Event listener untuk tombol proses
